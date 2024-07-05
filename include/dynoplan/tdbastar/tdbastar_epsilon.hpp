@@ -61,7 +61,7 @@ void tdbastar_epsilon(
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =
         nullptr,
-    float w = 0.0);
+    float w = 0.0, bool rootNode = false);
 
 // R1 with (R2,R3,R4), R2 with (R3,R4) and R3 with R4, state-by-state
 // not for car with trailer
@@ -79,7 +79,8 @@ int highLevelfocalHeuristicState(
 
 // computationally less efficient version of the low-level focal heuristic
 int lowLevelfocalHeuristicStatePrecise(
-    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution, Time_benchmark &time_bench,
+    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
+    Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
     const float current_gScore,
@@ -87,19 +88,23 @@ int lowLevelfocalHeuristicStatePrecise(
 
 // less accurate focal heuristic, but faster
 int lowLevelfocalHeuristicState(
-    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution, Time_benchmark &time_bench,
+    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
+    Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
     const float current_gScore,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false);
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
+    bool rootNode = false);
 
 int lowLevelfocalHeuristicSingleState(
-    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution, Time_benchmark &time_bench,
+    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
+    Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     Eigen::VectorXd state1, size_t &current_robot_idx,
     const float current_gScore,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false);
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
+    bool rootNode = false);
 
 } // namespace dynoplan

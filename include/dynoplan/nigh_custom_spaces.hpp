@@ -579,7 +579,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
     std::function<const Eigen::VectorXd(_T, bool)> fun =
         [](_T m, bool r_search) {
           if (r_search) {
-            return m->getLastStateEig();
+            return m->getLastStateEigCanonical();
           } else {
             return m->getStateEig();
           }
