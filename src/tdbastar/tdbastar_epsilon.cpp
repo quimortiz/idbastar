@@ -421,7 +421,7 @@ void tdbastar_epsilon(
     std::vector<fcl::CollisionObjectd *> &robot_objs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result,
-    float w) {
+    float w, bool run_focal_heuristic) {
 
 #ifdef DBG_PRINTS
   std::cout << "*** options_tdbastar ***" << std::endl;
@@ -440,16 +440,6 @@ void tdbastar_epsilon(
   int focalHeuristic = 0;
   size_t best_node_bestFocalHeuristicIdx = 0;
   int best_node_bestFocalHeuristic = 0;
-  bool run_focal_heuristic = true;
-  // if focalheuristic runs or not
-  size_t robots_with_solution = 0;
-  for (const auto &sol : solution) {
-    if (!sol.trajectory.states.empty())
-      ++robots_with_solution;
-  }
-  if (robots_with_solution != solution.size() - 1) {
-    run_focal_heuristic = false;
-  }
   // clean
   traj_out.states.clear();
   traj_out.actions.clear();
