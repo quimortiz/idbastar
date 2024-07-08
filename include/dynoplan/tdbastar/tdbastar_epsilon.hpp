@@ -61,7 +61,7 @@ void tdbastar_epsilon(
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =
         nullptr,
-    float w = 0.0, bool rootNode = false);
+    float w = 0.0);
 
 // R1 with (R2,R3,R4), R2 with (R3,R4) and R3 with R4, state-by-state
 // not for car with trailer
@@ -95,7 +95,7 @@ int lowLevelfocalHeuristicState(
     const float current_gScore,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
-    bool rootNode = false);
+    bool run_focal_heuristic = false);
 
 int lowLevelfocalHeuristicSingleState(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
@@ -105,6 +105,6 @@ int lowLevelfocalHeuristicSingleState(
     const float current_gScore,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
-    bool rootNode = false);
+    bool run_focal_heuristic = false);
 
 } // namespace dynoplan
