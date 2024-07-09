@@ -325,7 +325,11 @@ int lowLevelfocalHeuristicState(
       col_mng_robots->collide(&collision_data,
                               fcl::DefaultCollisionFunction<double>);
       if (collision_data.result.isCollision()) {
-        ++numConflicts;
+        const auto &contact = collision_data.result.getContact(0);
+        if (current_robot_idx == (size_t)contact.o1->getUserData() ||
+            current_robot_idx == (size_t)contact.o2->getUserData()) {
+          ++numConflicts;
+        }
       }
     }
   });
@@ -402,7 +406,11 @@ int lowLevelfocalHeuristicSingleState(
       col_mng_robots->collide(&collision_data,
                               fcl::DefaultCollisionFunction<double>);
       if (collision_data.result.isCollision()) {
-        ++numConflicts;
+        const auto &contact = collision_data.result.getContact(0);
+        if (current_robot_idx == (size_t)contact.o1->getUserData() ||
+            current_robot_idx == (size_t)contact.o2->getUserData()) {
+          ++numConflicts;
+        }
       }
     }
   });
@@ -621,6 +629,14 @@ void tdbastar_epsilon(
         return robot->is_state_valid(state);
       };
 
+  auto print_node_expansion_status = [&] {
+    std::cout << "best node state: "
+              << best_node->state_eig.format(dynobench::FMT)
+              << " best node focalheuristic: " << best_node->bestFocalHeuristic
+              << " best node hscore: " << best_node->hScore
+              << " best node fscore: " << best_node->fScore << std::endl;
+  };
+
   // we allocate a trajectory for the largest motion primitive
 
   dynobench::TrajWrapper traj_wrapper;
@@ -719,34 +735,42 @@ void tdbastar_epsilon(
     best_node_bestFocalHeuristic =
         best_node->arrivals.at(best_node_bestFocalHeuristicIdx).focalHeuristic;
 
-    if (all_print) {
+    // std::cout << "b/n state: " << best_node->state_eig.format(dynobench::FMT)
+    // << " b/n focalheuristic: " << best_node->bestFocalHeuristic << std::endl;
+
+    if (all_print && !reverse_search) {
       std::cout << "/////////////////////" << std::endl;
-      std::cout << "checking the open set" << std::endl;
+      std::cout << "Open set" << std::endl;
       for (auto &f : open) {
         std::cout << f->state_eig.format(FMT) << std::endl;
-        std::cout << f->fScore << std::endl;
-        std::cout << f->bestFocalHeuristic << std::endl;
+        std::cout << "focalHeuristic: " << f->bestFocalHeuristic << std::endl;
+        std::cout << "hScore: " << f->hScore << std::endl;
+        std::cout << "fScore: " << f->fScore << std::endl;
       }
       std::cout << "/////////////////////" << std::endl;
-      std::cout << "checking the focal set" << std::endl;
+      std::cout << "Focal set" << std::endl;
       for (auto &f1 : focal) {
         auto f2 = *f1;
         std::cout << f2->state_eig.format(FMT) << std::endl;
-        std::cout << f2->fScore << std::endl;
-        std::cout << f2->bestFocalHeuristic << std::endl;
+        std::cout << "focalHeuristic: " << f2->bestFocalHeuristic << std::endl;
+        std::cout << "hScore: " << f2->hScore << std::endl;
+        std::cout << "fScore: " << f2->fScore << std::endl;
       }
 
       std::cout << "open set size: " << open.size() << std::endl;
       std::cout << "focal set size: " << focal.size() << std::endl;
-      std::cout << "best node state: " << best_node->state_eig.format(FMT)
+
+      std::cout << "b/n state: " << best_node->state_eig.format(FMT)
                 << std::endl;
-      std::cout << "best node focalheuristic: " << best_node->bestFocalHeuristic
+      std::cout << "b/n focalheuristic: " << best_node->bestFocalHeuristic
                 << std::endl;
-      std::cout << "best node fscore: " << best_node->fScore << std::endl;
+      std::cout << "b/n hScore: " << best_node->hScore << std::endl;
+      std::cout << "b/n fscore: " << best_node->fScore << std::endl;
     }
 
     if (time_bench.expands % print_every == 0) {
       print_search_status();
+      // print_node_expansion_status();
     }
     time_bench.expands++;
     // CHECK if best node is close ENOUGH to goal
