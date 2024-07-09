@@ -231,9 +231,10 @@ public:
 
   const Eigen::VectorXd &getStateEig() const { return traj.states.front(); }
   const Eigen::VectorXd &getLastStateEig() const { return traj.states.back(); }
-  const Eigen::VectorXd getLastStateEigCanonical() const {
+  const Eigen::VectorXd
+  getLastStateEigCanonical(size_t translation_invariance) const {
     Eigen::VectorXd m = traj.states.back();
-    m.head(3).setZero(); // hard-coded for 3D case
+    m.head(translation_invariance).setZero();
     return m;
   }
 };

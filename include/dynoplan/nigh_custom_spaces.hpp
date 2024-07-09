@@ -576,10 +576,10 @@ template <typename _T>
 ompl::NearestNeighbors<_T> *nigh_factory_t(
     const std::string &name,
     const std::shared_ptr<dynobench::Model_robot> &robot, bool reverse_search,
-    std::function<const Eigen::VectorXd(_T, bool)> fun =
-        [](_T m, bool r_search) {
+    std::function<const Eigen::VectorXd(_T, bool, size_t)> fun =
+        [](_T m, bool r_search, size_t translation_invariance) {
           if (r_search) {
-            return m->getLastStateEigCanonical();
+            return m->getLastStateEigCanonical(translation_invariance);
           } else {
             return m->getStateEig();
           }
@@ -594,7 +594,8 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
 
     if (cost_scale < 0) {
       auto data_to_key = [robot, fun, reverse_search](_T const &m) {
-        Eigen::Vector3d __x = fun(m, reverse_search);
+        Eigen::Vector3d __x =
+            fun(m, reverse_search, robot->translation_invariance);
         return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2));
       };
 
@@ -605,7 +606,8 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
     } else {
       std::cout << "Warning: State space with cost!" << std::endl;
       auto data_to_key = [robot, fun, reverse_search](_T const &m) {
-        Eigen::Vector3d __x = fun(m, reverse_search);
+        Eigen::Vector3d __x =
+            fun(m, reverse_search, robot->translation_invariance);
         double c = m->get_cost();
         using Vector1d = Eigen::Matrix<double, 1, 1>;
         return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2), Vector1d(c));
@@ -623,7 +625,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
       auto data_to_key = [robot, fun, reverse_search](_T const &m) {
         using Vector5d = Eigen::Matrix<double, 5, 1>;
         using Vector1d = Eigen::Matrix<double, 1, 1>;
-        Vector5d __x = fun(m, reverse_search);
+        Vector5d __x = fun(m, reverse_search, robot->translation_invariance);
         return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2),
                           Vector1d(__x(3)), Vector1d(__x(4)));
       };
@@ -636,7 +638,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
       auto data_to_key = [robot, fun, reverse_search](_T const &m) {
         using Vector5d = Eigen::Matrix<double, 5, 1>;
         using Vector1d = Eigen::Matrix<double, 1, 1>;
-        Vector5d __x = fun(m, reverse_search);
+        Vector5d __x = fun(m, reverse_search, robot->translation_invariance);
         double c = m->get_cost();
         return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2),
                           Vector1d(__x(3)), Vector1d(__x(4)), Vector1d(c));
@@ -651,7 +653,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
   } else if (startsWith(name, "integrator2_2d")) {
     auto data_to_key = [robot, fun, reverse_search](_T const &m) {
       using Vector4d = Eigen::Matrix<double, 4, 1>;
-      Vector4d __x = fun(m, reverse_search);
+      Vector4d __x = fun(m, reverse_search, robot->translation_invariance);
       return std::tuple(Eigen::Vector2d(__x.head(2)),
                         Eigen::Vector2d(__x(2), __x(3)));
     };
@@ -663,7 +665,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
   } else if (startsWith(name, "integrator2_3d")) {
     auto data_to_key = [robot, fun, reverse_search](_T const &m) {
       using Vector6d = Eigen::Matrix<double, 6, 1>;
-      Vector6d __x = fun(m, reverse_search);
+      Vector6d __x = fun(m, reverse_search, robot->translation_invariance);
       // return std::tuple(Eigen::Vector3d(__x.head(3)),Eigen::Vector3d(__x(3),
       // __x(4), __x(5)));
       return std::tuple(Eigen::Vector3d(__x(0), __x(1), __x(2)),
@@ -678,7 +680,8 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
   } else if (startsWith(name, "car1")) {
 
     auto data_to_key = [robot, fun, reverse_search](_T const &m) {
-      Eigen::Vector4d __x = fun(m, reverse_search);
+      Eigen::Vector4d __x =
+          fun(m, reverse_search, robot->translation_invariance);
       return std::tuple(Eigen::Vector2d(__x(0), __x(1)), __x(2), __x(3));
     };
     // out = new NearestNeighborsNigh<_T, SpaceCar1>(data_to_key);
