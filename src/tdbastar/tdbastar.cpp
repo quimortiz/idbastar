@@ -432,8 +432,8 @@ bool check_lazy_trajectory(
       }
 
       if (state_to_check.size() > 0) {
-        bool violation =
-            robot.distance(state_to_check, constraint.constrained_state) <= delta;
+        bool violation = robot.distance(state_to_check,
+                                        constraint.constrained_state) <= delta;
         if (violation) {
           motion_valid = false;
           break;
@@ -441,7 +441,7 @@ bool check_lazy_trajectory(
       }
     }
   });
- 
+
   return motion_valid;
 };
 
