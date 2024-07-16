@@ -50,7 +50,7 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
   options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 70; // for drones, 100
   options_trajopt.max_iter = 50;
   problem.models_base_path = dynobench_base + std::string("models/");
 
