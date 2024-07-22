@@ -624,8 +624,9 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone16c) {
   options_trajopt.solver_id = 1;
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 80;
   options_trajopt.max_iter = 50;
+  options_trajopt.soft_control_bounds = true; 
   problem.models_base_path = DYNOBENCH_BASE "models/";
 
   Result_opti result;

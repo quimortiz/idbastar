@@ -614,8 +614,7 @@ void fix_problem_quaternion(Eigen::VectorXd &start, Eigen::VectorXd &goal,
   double d2 = (xs_init.front().segment<4>(3) + start.segment<4>(3)).norm();
 
   if (d2 < d1) {
-    std::cout << "WARNING: "
-              << "i flip the start state" << std::endl;
+    std::cout << "WARNING: " << "i flip the start state" << std::endl;
     xs_init.front().segment<4>(3) *= -1.;
   }
 
@@ -1081,8 +1080,8 @@ void __trajectory_optimization(
   SOLVER solver = static_cast<SOLVER>(options_trajopt_local.solver_id);
 
   if (modify_to_match_goal_start) {
-    std::cout << "WARNING: "
-              << "i modify last state to match goal" << std::endl;
+    std::cout << "WARNING: " << "i modify last state to match goal"
+              << std::endl;
     xs_init.back() = goal;
     xs_init.front() = start;
   }
@@ -1649,16 +1648,14 @@ void __trajectory_optimization(
 
       if (is_last) {
         finished = true;
-        std::cout << "finished: "
-                  << "is_last=TRUE" << std::endl;
+        std::cout << "finished: " << "is_last=TRUE" << std::endl;
       }
 
       counter++;
 
       if (counter > options_trajopt_local.max_mpc_iterations) {
         finished = true;
-        std::cout << "finished: "
-                  << "max mpc iterations" << std::endl;
+        std::cout << "finished: " << "max mpc iterations" << std::endl;
       }
     }
     std::cout << "Total TIME: " << total_time << std::endl;
@@ -1968,7 +1965,11 @@ void trajectory_optimization(const dynobench::Problem &problem,
     traj.multi_robot_index_goal = ptr_derived->goal_times;
   }
 
-  load_env(*model_robot, problem);
+  if (problem.time_varying_obstacles.size()) {
+    load_time_varying_env(*model_robot, problem);
+  } else {
+    load_env(*model_robot, problem);
+  }
 
   size_t _nx = model_robot->nx; // state
   size_t _nu = model_robot->nu;
@@ -2088,9 +2089,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
       CSTR_(time_ddp_total);
 
       if (!opti_out.success) {
-        std::cout << "warning"
-                  << " "
-                  << "not success" << std::endl;
+        std::cout << "warning" << " " << "not success" << std::endl;
         do_mpcc = false;
         break;
       }
@@ -2115,9 +2114,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
         time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
         CSTR_(time_ddp_total);
         if (!opti_out.success) {
-          std::cout << "warning"
-                    << " "
-                    << "not success" << std::endl;
+          std::cout << "warning" << " " << "not success" << std::endl;
           break;
         }
       }
@@ -2144,9 +2141,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
     time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
     CSTR_(time_ddp_total);
     if (!opti_out.success) {
-      std::cout << "warning"
-                << " "
-                << "not success" << std::endl;
+      std::cout << "warning" << " " << "not success" << std::endl;
       do_free_time = false;
     }
 
@@ -2194,9 +2189,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
     time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
     CSTR_(time_ddp_total);
     if (!opti_out.success) {
-      std::cout << "warning"
-                << " "
-                << "fail first step" << std::endl;
+      std::cout << "warning" << " " << "fail first step" << std::endl;
       do_free_time = false;
     }
 
@@ -2374,8 +2367,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
     CSTR_(time_ddp_total);
 
     if (!opti_out.success) {
-      std::cout << "warning:"
-                << "not success" << std::endl;
+      std::cout << "warning:" << "not success" << std::endl;
       do_final_repair_step = false;
     }
 
@@ -2410,9 +2402,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
     CSTR_(time_ddp_total);
 
     if (!opti_out.success) {
-      std::cout << "warning"
-                << " "
-                << "infeasible" << std::endl;
+      std::cout << "warning" << " " << "infeasible" << std::endl;
       do_final_repair_step = false;
     }
 
@@ -2523,9 +2513,7 @@ void trajectory_optimization(const dynobench::Problem &problem,
     // solve without bounds  --
 
     if (!opti_out.success) {
-      std::cout << "warning"
-                << " "
-                << "not success" << std::endl;
+      std::cout << "warning" << " " << "not success" << std::endl;
       do_opti_with_real_bounds = false;
     }
 
