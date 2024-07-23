@@ -626,7 +626,7 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone16c) {
   options_trajopt.use_warmstart = 1;
   options_trajopt.weight_goal = 80;
   options_trajopt.max_iter = 50;
-  options_trajopt.soft_control_bounds = true; 
+  options_trajopt.soft_control_bounds = true;
   problem.models_base_path = DYNOBENCH_BASE "models/";
 
   Result_opti result;
@@ -700,6 +700,7 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone24c) {
   options_trajopt.use_warmstart = 1;
   options_trajopt.weight_goal = 100;
   options_trajopt.max_iter = 50;
+  options_trajopt.soft_control_bounds = true;
   problem.models_base_path = DYNOBENCH_BASE "models/";
 
   Result_opti result;
@@ -773,6 +774,7 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone32c) {
   options_trajopt.use_warmstart = 1;
   options_trajopt.weight_goal = 100;
   options_trajopt.max_iter = 50;
+  options_trajopt.soft_control_bounds = true;
   problem.models_base_path = DYNOBENCH_BASE "models/";
 
   Result_opti result;
@@ -802,4 +804,36 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone32c) {
       index_time_goals);
 
   multi_out.to_yaml_format("envs/multirobot/results/drone32c_solution.yaml");
+}
+
+// moving obstacles
+BOOST_AUTO_TEST_CASE(t_moving_obstacles) {
+
+  // std::string env_file = DYNOBENCH_BASE
+  // "envs/multirobot/example/moving_obs_twd_start.yaml";
+  std::string env_file = "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/"
+                         "envs/multirobot/example/moving_obs_swap4_drone.yaml";
+
+  Problem problem(env_file);
+
+  problem.models_base_path = DYNOBENCH_BASE "models/";
+
+  Options_trajopt options_trajopt;
+  options_trajopt.solver_id = 0;
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 80;
+  options_trajopt.max_iter = 50;
+  options_trajopt.soft_control_bounds = true;
+
+  // solve the optimization problem
+
+  Trajectory init_guess;
+  Trajectory sol;
+  Result_opti opti_out;
+
+  init_guess.num_time_steps = 200;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, opti_out);
+
+  sol.to_yaml_format("moving_obs_swap4_drone.yaml");
 }
