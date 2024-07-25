@@ -1,5 +1,6 @@
 #include "dynobench/multirobot_trajectory.hpp"
 #include <algorithm>
+#include <bits/stdc++.h>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <fstream>
@@ -25,9 +26,8 @@ int main(int argc, char *argv[]) {
       "env,e", po::value<std::string>(&envFile)->required())(
       "init,i", po::value<std::string>(&initFile)->required())(
       "out,o", po::value<std::string>(&outFile)->required())(
-      "base,b", po::value<std::string>(&dynobench_base)->required())
-
-      ("sum,s", po::value<bool>(&sum_robots_cost)->required());
+      "base,b", po::value<std::string>(&dynobench_base)->required())(
+      "sum,s", po::value<bool>(&sum_robots_cost)->required());
 
   try {
     po::variables_map vm;
@@ -44,6 +44,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  execute_optimizationMultiRobot(envFile, initFile, outFile, dynobench_base,
-                                 sum_robots_cost);
+  // execute_optimizationMultiRobot(envFile, initFile, outFile, dynobench_base,
+  //                                sum_robots_cost);
+  std::unordered_set<size_t> cluster = {0, 1};
+  execute_optimizationMetaRobot(envFile, initFile, outFile, dynobench_base,
+                                cluster, sum_robots_cost);
 }
