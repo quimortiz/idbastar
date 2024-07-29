@@ -6,6 +6,7 @@
 
 #include "crocoddyl/core/numdiff/action.hpp"
 #include "crocoddyl/core/solvers/box-fddp.hpp"
+#include "crocoddyl/core/solvers/ipopt.hpp"
 #include "crocoddyl/core/utils/callbacks.hpp"
 #include "crocoddyl/core/utils/timer.hpp"
 
@@ -994,6 +995,25 @@ void solve_for_fixed_penalty(
   ddp_time += timer.get_duration();
   xs_out = ddp.get_xs();
   us_out = ddp.get_us();
+
+
+  // TODO: remove this!!
+  bool dev_try_ipopt = false;
+  if (dev_try_ipopt)
+  {
+    std::cout << "lets try to use ipopt" << std::endl;
+    crocoddyl::SolverIpopt ipopt(problem_croco);
+    ipopt.setStringIpoptOption( "derivative_test", "first-order");
+    ipopt.setNumericIpoptOption("derivative_test_tol", 1e-4);
+    ipopt.setStringIpoptOption("derivative_test_print_all", "yes");
+    ipopt.setStringIpoptOption("jacobian_approximation", "finite-difference-values");
+
+    // NOTE: there is something wrong with the derivatives! but what?
+    bool  out = ipopt.solve(xs, us, 10 * options_trajopt_local.max_iter, false,
+                            options_trajopt_local.init_reg);
+    std::cout << "out of ipopt is" << out << std::endl;
+    throw 1;
+  }
 
   // report after
   std::string filename = folder_tmptraj + "opt_" + random_id + ".yaml";

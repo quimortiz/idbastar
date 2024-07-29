@@ -906,6 +906,9 @@ void ActionModelDyno::calc(const boost::shared_ptr<ActionDataAbstract> &data,
     }
     index += _nr;
   }
+
+ // std::cout << "calc - x " << x.transpose() << " u " << u.transpose()
+  //          << " cost " << d->cost << std::endl;
 }
 
 void ActionModelDyno::calcDiff(

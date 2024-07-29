@@ -50,6 +50,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(DISABLE_DYNOBENCH_TESTS ON)
 add_subdirectory(dynobench)
 
+
+# i have to include  include/coin to all project ... because of error in crocoddyl
+include_directories(/usr/include/coin)
+
+
+
 add_executable(main_rrt_to ./src/ompl/main_rrt_to.cpp)
 add_executable(main_primitives ./src/motion_primitives/main_primitives.cpp)
 add_executable(from_boost_to_msgpack
