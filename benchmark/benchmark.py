@@ -1467,10 +1467,11 @@ def compare_time(
 
     algs = [
         # "idbastar_v0_fixedtime",
+        "idbastar_v0_freetime_mim",
         "idbastar_v0_freetime",
-        "idbastar_v0_search",
-        "idbastar_v0_mpc",
-        "idbastar_v0_mpcc",
+        # "idbastar_v0_search",
+        # "idbastar_v0_mpc",
+        # "idbastar_v0_mpcc",
     ]
 
     df = pandas.DataFrame.from_dict(reduced_data)
@@ -1563,6 +1564,7 @@ def compare_time(
 
             Dalg2label = {
                 "idbastar_v0_fixedtime": "Fixed",
+                "idbastar_v0_freetime_mim": "Free-dt-mim",
                 "idbastar_v0_freetime": "Free-dt",
                 "idbastar_v0_mpc": "MPC",
                 "idbastar_v0_mpcc": "MPCC",
@@ -1570,6 +1572,7 @@ def compare_time(
             }
 
             Ddata = {}
+            print('algs are', algs)
             for alg in algs:
                 Dalg = {"time_mean": [], "cost_mean": []}
                 for guess in guesses:
@@ -1608,7 +1611,9 @@ def compare_time(
                     [yy + (i - 1) * width for yy in y],
                     data,
                     width,
-                    label=Dalg2label[alg],
+                    label=
+                    Dalg2label.get(alg,alg),
+                    # Dalg2label[alg],
                 )
                 i += 1
 
@@ -2572,8 +2577,10 @@ def compare(
                 "quadrotor_v1/window": [2, 8],
                 "unicycle1_v0/bugtrap_0": [15, 70],
             }
+            add_sbpl = False
 
-            if problem == "unicycle1_v0/bugtrap_0":
+            print("flag add_sbpl", add_sbpl)
+            if add_sbpl and problem == "unicycle1_v0/bugtrap_0":
                 print("adding sbpl results")
                 sbpl_data = (
                     "./../results_sbpl/tmp_stats_unicycle_first_order_0_bugtrap_0.yaml"

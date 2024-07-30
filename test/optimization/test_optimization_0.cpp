@@ -30,7 +30,7 @@
 using namespace dynoplan;
 using namespace dynobench;
 
-BOOST_AUTO_TEST_CASE(second_order_park_traj_opt) {
+BOOST_AUTO_TEST_CASE(second_order_park_traj_opt_mim) {
 
   Options_trajopt options_trajopt;
   Problem problem(DYNOBENCH_BASE +
@@ -46,6 +46,9 @@ BOOST_AUTO_TEST_CASE(second_order_park_traj_opt) {
   options_trajopt.weight_goal = 100;
   options_trajopt.max_iter = 50;
   problem.models_base_path = DYNOBENCH_BASE + std::string("models/");
+  options_trajopt.soft_control_bounds = true;
+  options_trajopt.use_mim_solvers = true;
+
 
   Result_opti result;
   Trajectory sol;

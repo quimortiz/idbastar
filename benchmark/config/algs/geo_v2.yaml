@@ -1,0 +1,6 @@
+reference: geo_v0 # I import the weight_goal parameter from idbastar_v0
+default:
+  use_mim_solvers: true 
+  soft_control_bounds: true
+  mim_line_search: false
+  mim_mu: 50000

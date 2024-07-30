@@ -1,0 +1,11 @@
+reference: "idbastar_v0"
+default:
+  max_it: 1
+  use_mim_solvers: true 
+  soft_control_bounds: true
+  mim_line_search: false
+  mim_mu: 1000
+
+quad3d_v0:
+  default:
+    max_iter: 100
