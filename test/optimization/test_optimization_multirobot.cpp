@@ -802,17 +802,18 @@ BOOST_AUTO_TEST_CASE(t_multi_robot_drone32c) {
   MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory(
       sol, init_guess_multi_robot.get_nxs(), init_guess_multi_robot.get_nus(),
       index_time_goals);
-
+  //
   multi_out.to_yaml_format("envs/multirobot/results/drone32c_solution.yaml");
 }
 
 // moving obstacles
 BOOST_AUTO_TEST_CASE(t_moving_obstacles) {
 
-  // std::string env_file = DYNOBENCH_BASE
-  // "envs/multirobot/example/moving_obs_twd_start.yaml";
-  std::string env_file = "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/"
-                         "envs/multirobot/example/moving_obs_swap4_drone.yaml";
+  std::string env_file =
+      DYNOBENCH_BASE "envs/multirobot/example/moving_obs_twd_start.yaml";
+  // std::string env_file =
+  // "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/"
+  //  "envs/multirobot/example/moving_obs_swap4_drone.yaml";
 
   Problem problem(env_file);
 

@@ -93,7 +93,7 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
                                    const std::string &output_file,
                                    const std::string &dynobench_base,
                                    std::unordered_set<size_t> &cluster,
-                                   bool sum_robots_cost) {
+                                   bool sum_robots_cost = true) {
 
   using namespace dynoplan;
   using namespace dynobench;
@@ -105,10 +105,12 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
   init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
 
   std::vector<int> goal_times; // (cluster.size());
+  std::vector<int> all_goal_times;
 
   size_t index = 0;
   for (const auto &traj : init_guess_multi_robot.trajectories) {
-    if (cluster.find(index) == cluster.end()) {
+    all_goal_times.push_back(traj.states.size());
+    if (cluster.find(index) != cluster.end()) {
       goal_times.push_back(traj.states.size());
     }
     ++index;
@@ -126,7 +128,7 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
     std::cout
         << "warning: new approach where each robot tries to reach the goal fast"
         << std::endl;
-    problem.goal_times = goal_times;
+    problem.goal_times = goal_times; // for the cluster
   }
 
   else {
@@ -149,8 +151,6 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
   dynobench::Trajectory init_guess_meta =
       init_guess_multi_robot.transform_to_meta_trajectory(cluster);
 
-  // init_guess_meta.num_time_steps  = 200; // change for meta-robot?
-
   trajectory_optimization(problem, init_guess_meta, options_trajopt, sol,
                           result);
   if (!result.feasible) {
@@ -159,18 +159,30 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
   }
 
   std::cout << "optimization done! " << std::endl;
-  std::vector<int> index_time_goals;
+  // merge solutions if the optimization is feasible
 
+  std::vector<int> index_time_goals; // for all robots
+  size_t num_robots =
+      init_guess_multi_robot.get_num_robots(); // all robots from sequenuence
   if (problem.goal_times.size()) {
-    index_time_goals = sol.multi_robot_index_goal;
-  } else {
-    size_t num_robots = init_guess_multi_robot.get_num_robots();
-    index_time_goals = std::vector<int>(num_robots, sol.states.size());
+    size_t j = 0; // keep track of cluster robots
+    for (size_t i = 0; i < num_robots; i++) {
+      if (cluster.find(i) == cluster.end()) {
+        index_time_goals.push_back(all_goal_times.at(i));
+      } else {
+        index_time_goals.push_back(sol.multi_robot_index_goal.at(j));
+        j++;
+      }
+    }
   }
+  // else {
+  //   index_time_goals = std::vector<int>(num_robots, sol.states.size()); //
+  //   not used, but wrong implementation
+  // }
 
-  MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory(
-      sol, init_guess_multi_robot.get_nxs(), init_guess_multi_robot.get_nus(),
-      index_time_goals);
+  // sol has ordered sequence.., 0, 1, etc. for robot idx
+  MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory_meta(
+      cluster, sol, init_guess_multi_robot, index_time_goals);
 
   multi_out.to_yaml_format(output_file.c_str());
 
