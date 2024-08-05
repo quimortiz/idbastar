@@ -90,7 +90,7 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 
 bool execute_optimizationMetaRobot(const std::string &env_file,
                                    const std::string &initial_guess_file,
-                                   const std::string &output_file,
+                                   MultiRobotTrajectory &multi_robot_out,
                                    const std::string &dynobench_base,
                                    std::unordered_set<size_t> &cluster,
                                    bool sum_robots_cost = true) {
@@ -175,16 +175,11 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
       }
     }
   }
-  // else {
-  //   index_time_goals = std::vector<int>(num_robots, sol.states.size()); //
-  //   not used, but wrong implementation
-  // }
 
-  // sol has ordered sequence.., 0, 1, etc. for robot idx
-  MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory_meta(
-      cluster, sol, init_guess_multi_robot, index_time_goals);
+  from_joint_to_indiv_trajectory_meta(cluster, sol, init_guess_multi_robot,
+                                      multi_robot_out, index_time_goals);
 
-  multi_out.to_yaml_format(output_file.c_str());
+  // multi_out.to_yaml_format(output_file.c_str());
 
   return true;
 }

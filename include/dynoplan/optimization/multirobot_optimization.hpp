@@ -2,6 +2,8 @@
 
 #include <bits/stdc++.h>
 #include <string>
+// #include "dynobench/motions.hpp"
+#include <dynobench/multirobot_trajectory.hpp>
 
 bool execute_optimizationMultiRobot(const std::string &env_file,
                                     const std::string &initial_guess_file,
@@ -11,7 +13,7 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 
 bool execute_optimizationMetaRobot(const std::string &env_file,
                                    const std::string &initial_guess_file,
-                                   const std::string &output_file,
+                                   MultiRobotTrajectory &multi_robot_out,
                                    const std::string &dynobench_base,
                                    std::unordered_set<size_t> &cluster,
                                    bool sum_robots_cost);
