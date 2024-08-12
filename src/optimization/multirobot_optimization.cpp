@@ -89,7 +89,7 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 }
 
 bool execute_optimizationMetaRobot(const std::string &env_file,
-                                   const std::string &initial_guess_file,
+                                   MultiRobotTrajectory &init_guess_multi_robot,
                                    MultiRobotTrajectory &multi_robot_out,
                                    const std::string &dynobench_base,
                                    std::unordered_set<size_t> &cluster,
@@ -100,9 +100,6 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
 
   Options_trajopt options_trajopt;
   Problem problem(env_file);
-
-  MultiRobotTrajectory init_guess_multi_robot;
-  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
 
   std::vector<int> goal_times; // (cluster.size());
   std::vector<int> all_goal_times;
@@ -176,10 +173,7 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
     }
   }
 
-  from_joint_to_indiv_trajectory_meta(cluster, sol, init_guess_multi_robot,
-                                      multi_robot_out, index_time_goals);
-
-  // multi_out.to_yaml_format(output_file.c_str());
-
+  from_joint_to_indiv_trajectory_meta(cluster, sol, multi_robot_out,
+                                      index_time_goals);
   return true;
 }

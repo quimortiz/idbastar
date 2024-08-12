@@ -138,15 +138,18 @@ int main(int argc, char *argv[]) {
 
   // std::unordered_set<size_t> cluster = {2, 3};
   MultiRobotTrajectory multi_out;
+  MultiRobotTrajectory init_guess_multi_robot;
+  init_guess_multi_robot.read_from_yaml(initFile.c_str());
   multi_out.trajectories.resize(4);
   std::vector<std::unordered_set<size_t>> clusters{{0, 1}, {2, 3}};
   for (size_t i = 0; i < clusters.size(); i++) {
     std::cout << "cluster " << i << std::endl;
     std::string env_file_id =
         "/tmp/dynoplan/env_file_" + gen_random(4) + ".yaml";
+
     test_env(envFile, initFile, /*outputFile*/ env_file_id, clusters.at(i));
-    execute_optimizationMetaRobot(env_file_id, initFile, multi_out,
-                                  dynobench_base, clusters.at(i),
+    execute_optimizationMetaRobot(env_file_id, init_guess_multi_robot,
+                                  multi_out, dynobench_base, clusters.at(i),
                                   sum_robots_cost);
   }
 }
