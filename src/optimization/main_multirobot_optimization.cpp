@@ -136,20 +136,27 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  // std::unordered_set<size_t> cluster = {2, 3};
-  MultiRobotTrajectory multi_out;
-  MultiRobotTrajectory init_guess_multi_robot;
-  init_guess_multi_robot.read_from_yaml(initFile.c_str());
-  multi_out.trajectories.resize(4);
-  std::vector<std::unordered_set<size_t>> clusters{{0, 1}, {2, 3}};
+  MultiRobotTrajectory parallel_multirobot_sol;
+  parallel_multirobot_sol.read_from_yaml(
+      "../dynobench/envs/multirobot/meta-robot/drone32c/parallel_opt.yaml");
+  MultiRobotTrajectory multi_out = parallel_multirobot_sol;
+
+  std::vector<std::unordered_set<size_t>> clusters{{25}};
+  // for drone32c case
+  MultiRobotTrajectory discrete_search_sol;
+  discrete_search_sol.read_from_yaml(
+      "../dynobench/envs/multirobot/meta-robot/drone32c/drone32c_db.yaml");
+
   for (size_t i = 0; i < clusters.size(); i++) {
     std::cout << "cluster " << i << std::endl;
-    std::string env_file_id =
-        "/tmp/dynoplan/env_file_" + gen_random(4) + ".yaml";
+    std::string env_file_id = dynobench_base +
+                              "/envs/multirobot/meta-robot/drone32c/env_test_" +
+                              gen_random(4) + ".yaml";
 
     test_env(envFile, initFile, /*outputFile*/ env_file_id, clusters.at(i));
-    execute_optimizationMetaRobot(env_file_id, init_guess_multi_robot,
-                                  multi_out, dynobench_base, clusters.at(i),
+
+    execute_optimizationMetaRobot(env_file_id, discrete_search_sol, multi_out,
+                                  dynobench_base, clusters.at(i),
                                   sum_robots_cost);
   }
 }
