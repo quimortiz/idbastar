@@ -576,6 +576,41 @@ struct Quad3d_acceleration_cost : Cost {
   virtual ~Quad3d_acceleration_cost() = default;
 };
 
+
+struct dintegratorCables_acceleration_cost : Cost {
+
+  using Vector4d = Eigen::Matrix<double, 4, 1>;
+  using Vector8d = Eigen::Matrix<double, 8, 1>;
+
+  std::shared_ptr<dynobench::Model_robot> model;
+
+  double k_acc = 1;
+  Vector8d f;
+  Vector4d acc;
+  Eigen::Matrix<double, 4, 4> acc_u;
+  Eigen::Matrix<double, 4, 8> acc_x;
+
+  Eigen::Matrix<double, 8, 8> Jv_x;
+  Eigen::Matrix<double, 8, 4> Jv_u;
+
+  dintegratorCables_acceleration_cost(
+      const std::shared_ptr<dynobench::Model_robot> &model_robot);
+
+  virtual void calc(Eigen::Ref<Eigen::VectorXd> r,
+                    const Eigen::Ref<const Eigen::VectorXd> &x,
+                    const Eigen::Ref<const Eigen::VectorXd> &u) override;
+
+  virtual void calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
+                        Eigen::Ref<Eigen::VectorXd> Lu,
+                        Eigen::Ref<Eigen::MatrixXd> Lxx,
+                        Eigen::Ref<Eigen::MatrixXd> Luu,
+                        Eigen::Ref<Eigen::MatrixXd> Lxu,
+                        const Eigen::Ref<const Eigen::VectorXd> &x,
+                        const Eigen::Ref<const Eigen::VectorXd> &u) override;
+
+  virtual ~dintegratorCables_acceleration_cost() = default;
+};
+
 struct Acceleration_cost_acrobot : Cost {
 
   dynobench::Model_acrobot model;
