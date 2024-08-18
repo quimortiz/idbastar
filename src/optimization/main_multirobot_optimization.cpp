@@ -47,7 +47,7 @@ void test_env(const std::string &env_file,
   // read the result
   YAML::Node initial_guess = YAML::LoadFile(initial_guess_file);
   size_t num_robots = initial_guess["result"].size();
-
+  std::cout << num_robots << std::endl;
   for (size_t i = 0; i < num_robots; i++) {
     if (cluster.find(i) != cluster.end()) { //  robots that are within cluster
       YAML::Node robot_node;
@@ -138,20 +138,20 @@ int main(int argc, char *argv[]) {
 
   MultiRobotTrajectory parallel_multirobot_sol;
   parallel_multirobot_sol.read_from_yaml(
-      "../dynobench/envs/multirobot/meta-robot/drone32c/parallel_opt.yaml");
+      "/home/akmarak-laptop/IMRC/db-CBS/results/"
+      "parallel_multirobot_sol_drone32.yaml");
   MultiRobotTrajectory multi_out = parallel_multirobot_sol;
 
-  std::vector<std::unordered_set<size_t>> clusters{{25}};
+  std::vector<std::unordered_set<size_t>> clusters{{21, 22}};
   // for drone32c case
   MultiRobotTrajectory discrete_search_sol;
   discrete_search_sol.read_from_yaml(
-      "../dynobench/envs/multirobot/meta-robot/drone32c/drone32c_db.yaml");
+      "/home/akmarak-laptop/IMRC/db-CBS/results/dbcbs_drone32.yaml");
 
   for (size_t i = 0; i < clusters.size(); i++) {
     std::cout << "cluster " << i << std::endl;
-    std::string env_file_id = dynobench_base +
-                              "/envs/multirobot/meta-robot/drone32c/env_test_" +
-                              gen_random(4) + ".yaml";
+    std::string env_file_id =
+        "/home/akmarak-laptop/IMRC/db-CBS/results/env.yaml";
 
     test_env(envFile, initFile, /*outputFile*/ env_file_id, clusters.at(i));
 

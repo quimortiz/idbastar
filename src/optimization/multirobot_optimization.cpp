@@ -143,9 +143,10 @@ bool execute_optimizationMetaRobot(
   options_trajopt.solver_id = 0;
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 500;
   options_trajopt.max_iter = 50;
-  options_trajopt.soft_control_bounds = true;
+  options_trajopt.soft_control_bounds =
+      false; // cbs-optimization fails (ubound_feas = 0) if true
   problem.models_base_path = dynobench_base + std::string("models/");
 
   Result_opti result;
