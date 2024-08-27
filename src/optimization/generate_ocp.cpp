@@ -149,7 +149,7 @@ generate_problem(const Generate_params &gen_args,
     feats_run.push_back(control_feature);
 
     if (options_trajopt.soft_control_bounds) {
-      std::cout << "Experimental" << std::endl;
+      // std::cout << "Experimental" << std::endl;
       Eigen::VectorXd v = Eigen::VectorXd(nu);
       double delta = 1e-4;
       v.setConstant(100);
@@ -163,11 +163,10 @@ generate_problem(const Generate_params &gen_args,
 
     // feats_run.push_back(mk<State_bounds>(nx, nu, nx, v, -v);
 
+    bool time_variant_collision = gen_args.model_robot->time_varying_env.size();
 
-    bool time_variant_collision = gen_args.model_robot->time_varying_env.size() ;
-
-
-    if ( !time_variant_collision && gen_args.collisions && gen_args.model_robot->env) {
+    if (!time_variant_collision && gen_args.collisions &&
+        gen_args.model_robot->env) {
       ptr<Cost> cl_feature = mk<Col_cost>(nx, nu, 1, gen_args.model_robot,
                                           options_trajopt.collision_weight);
       feats_run.push_back(cl_feature);
@@ -179,16 +178,14 @@ generate_problem(const Generate_params &gen_args,
     // else if ( !gen_args.time_variant_collisions ) {
     //
     else if (time_variant_collision && gen_args.collisions) {
-      ptr<Cost> cl_feature = mk<Col_cost_moving>(t, nx, nu, 1, gen_args.model_robot,
-                                          options_trajopt.collision_weight);
+      ptr<Cost> cl_feature = mk<Col_cost_moving>(
+          t, nx, nu, 1, gen_args.model_robot, options_trajopt.collision_weight);
       feats_run.push_back(cl_feature);
 
       if (gen_args.contour_control)
         boost::static_pointer_cast<Col_cost>(cl_feature)
             ->set_nx_effective(nx - 1);
     }
-
-
 
     //
 
