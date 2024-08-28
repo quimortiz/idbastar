@@ -59,7 +59,22 @@ void test_env(const std::string &env_file,
       data["robots"].push_back(robot_node);
     }
   }
-
+  // static obstacles
+  for (const auto &obs : env["environment"]["obstacles"]) {
+    YAML::Node obs_node;
+    std::string octomap_filename;
+    if (obs["type"].as<std::string>() == "octomap") {
+      obs_node["center"] = YAML::Node(YAML::NodeType::Sequence); // Empty list
+      obs_node["size"] = YAML::Node(YAML::NodeType::Sequence);   // Empty list
+      obs_node["octomap_file"] = obs["octomap_file"];
+      obs_node["type"] = "octomap";
+    } else {
+      obs_node["center"] = obs["center"];
+      obs_node["size"] = obs["size"];
+      obs_node["type"] = obs["type"];
+    }
+    data["environment"]["static_obstacles"].push_back(obs_node);
+  }
   MultiRobotTrajectory init_guess_multi_robot;
   init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
   size_t max_t = 0;
@@ -155,10 +170,10 @@ int main(int argc, char *argv[]) {
   discrete_search_sol.read_from_yaml(discreteSearchFile.c_str());
   MultiRobotTrajectory multi_out = parallel_multirobot_sol;
   // if the cluster is known then run only this
-  std::unordered_set<size_t> cluster{0, 1};
-  std::string env_file_id =
-      "../dynobench/envs/multirobot/example/tmp_envFile.yaml";
-  test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
+  std::unordered_set<size_t> cluster{3, 5};
+  std::string env_file_id = "/home/akmarak-laptop/IMRC/db-CBS/results/"
+                            "static_obs/drone12c/tmp_envFile.yaml";
+  // test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
   bool feasible =
       execute_optimizationMetaRobot(env_file_id, discrete_search_sol, multi_out,
                                     dynobench_base, cluster, sum_robots_cost);
