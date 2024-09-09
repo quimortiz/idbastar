@@ -75,6 +75,7 @@ struct AStarNode {
   // motion used_motion
   struct arrival {
     double gScore;
+    double fScore;
     int focalHeuristic;
     // AStarNode* came_from;
     std::shared_ptr<AStarNode> came_from;
@@ -252,8 +253,8 @@ struct Expander {
   void expand_lazy(Eigen::Ref<const Eigen::VectorXd> x,
                    std::vector<LazyTraj> &lazy_trajs) {
 
-    robot->canonical_state(x, canonical_state);
-    robot->offset(x, offset);
+    robot->canonical_state(x, canonical_state); // same as state size
+    robot->offset(x, offset);                   // only position part
     fakeMotion.traj.states.at(0) = canonical_state;
     assert(delta > 0);
 
