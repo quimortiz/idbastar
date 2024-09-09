@@ -220,8 +220,8 @@ generate_problem(const Generate_params &gen_args,
       Vxd state_ref = Vxd::Zero(nx);
       
       state_weights.setOnes();
-      state_weights *= 0.01;
-      state_weights.segment<4>(4) = 0.001 *V4d::Ones();
+      state_weights *= 0.1;
+      // state_weights.segment<4>(4) = 0.001 *V4d::Ones();
       // state_weights.setZero();
 
       ptr<Cost> state_feature =
