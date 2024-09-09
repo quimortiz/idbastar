@@ -88,12 +88,11 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
   return true;
 }
 
-bool execute_optimizationMetaRobot(const std::string &env_file,
-                                   const std::string &initial_guess_file,
-                                   MultiRobotTrajectory &multi_robot_out,
-                                   const std::string &dynobench_base,
-                                   std::unordered_set<size_t> &cluster,
-                                   bool sum_robots_cost = true) {
+bool execute_optimizationMetaRobot(
+    const std::string &env_file,
+    MultiRobotTrajectory &init_guess_multi_robot, // discrete search
+    MultiRobotTrajectory &multi_robot_out, const std::string &dynobench_base,
+    std::unordered_set<size_t> &cluster, bool sum_robots_cost = true) {
 
   using namespace dynoplan;
   using namespace dynobench;
@@ -101,18 +100,22 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
   Options_trajopt options_trajopt;
   Problem problem(env_file);
 
-  MultiRobotTrajectory init_guess_multi_robot;
-  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
-
   std::vector<int> goal_times; // (cluster.size());
   std::vector<int> all_goal_times;
 
   size_t index = 0;
-  for (const auto &traj : init_guess_multi_robot.trajectories) {
-    all_goal_times.push_back(traj.states.size());
+  for (size_t i = 0; i < init_guess_multi_robot.trajectories.size(); i++) {
+    // all_goal_times.push_back(traj.states.size());
     if (cluster.find(index) != cluster.end()) {
-      goal_times.push_back(traj.states.size());
-    }
+      goal_times.push_back(init_guess_multi_robot.trajectories.at(i)
+                               .states.size()); // from the discrete search
+      all_goal_times.push_back(
+          init_guess_multi_robot.trajectories.at(i).states.size());
+    } else
+      all_goal_times.push_back(
+          multi_robot_out.trajectories.at(i)
+              .states.size()); // from the parallel optimization
+
     ++index;
   }
 
@@ -140,9 +143,11 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
   options_trajopt.solver_id = 0;
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 600;
   options_trajopt.max_iter = 50;
-  options_trajopt.soft_control_bounds = true;
+  options_trajopt.soft_control_bounds =
+      false; // cbs-optimization fails (ubound_feas = 0) if true
+  options_trajopt.collision_weight = 200;
   problem.models_base_path = dynobench_base + std::string("models/");
 
   Result_opti result;
@@ -176,10 +181,8 @@ bool execute_optimizationMetaRobot(const std::string &env_file,
     }
   }
 
-  from_joint_to_indiv_trajectory_meta(cluster, sol, init_guess_multi_robot,
-                                      multi_robot_out, index_time_goals);
-
-  // multi_out.to_yaml_format(output_file.c_str());
-
+  from_joint_to_indiv_trajectory_meta(
+      cluster, sol, multi_robot_out,
+      index_time_goals); // time matters only for cluster
   return true;
 }

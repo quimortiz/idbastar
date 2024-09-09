@@ -611,13 +611,11 @@ void Col_cost::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
   }
 };
 
-
-Col_cost_moving::Col_cost_moving(
-  size_t time_index,
-  size_t nx, size_t nu, size_t nr,
-                   std::shared_ptr<dynobench::Model_robot> model, double weight)
-    : 
-  Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight) {
+Col_cost_moving::Col_cost_moving(size_t time_index, size_t nx, size_t nu,
+                                 size_t nr,
+                                 std::shared_ptr<dynobench::Model_robot> model,
+                                 double weight)
+    : Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight) {
   last_x = Vxd::Ones(nx);
   name = "collision";
   nx_effective = nx;
@@ -630,7 +628,7 @@ Col_cost_moving::Col_cost_moving(
 }
 
 void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x,
-                    const Eigen::Ref<const Vxd> &u) {
+                           const Eigen::Ref<const Vxd> &u) {
   check_input_calc(r, x, u);
   calc(r, x);
 }
@@ -651,7 +649,9 @@ void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x) {
   if (check_one || check_two) {
     raw_d = last_raw_d;
   } else {
-    model->collision_distance_time( x.head(nx_effective), time_index,  cinfo);
+    model->collision_distance_time(x.head(nx_effective), time_index, cinfo);
+    // std::cout << "col cost moving, cinfo.distance: " << cinfo.distance <<
+    // std::endl;
     raw_d = cinfo.distance;
     last_x = x;
     last_raw_d = raw_d;
@@ -664,19 +664,19 @@ void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x) {
 }
 
 void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
-                        Eigen::Ref<Eigen::VectorXd> Lu,
-                        Eigen::Ref<Eigen::MatrixXd> Lxx,
-                        Eigen::Ref<Eigen::MatrixXd> Luu,
-                        Eigen::Ref<Eigen::MatrixXd> Lxu,
-                        const Eigen::Ref<const Eigen::VectorXd> &x,
-                        const Eigen::Ref<const Eigen::VectorXd> &u) {
+                               Eigen::Ref<Eigen::VectorXd> Lu,
+                               Eigen::Ref<Eigen::MatrixXd> Lxx,
+                               Eigen::Ref<Eigen::MatrixXd> Luu,
+                               Eigen::Ref<Eigen::MatrixXd> Lxu,
+                               const Eigen::Ref<const Eigen::VectorXd> &x,
+                               const Eigen::Ref<const Eigen::VectorXd> &u) {
   check_input_calcDiff(Lx, Lu, Lxx, Luu, Lxu, x, u);
   calcDiff(Lx, Lxx, x);
 }
 
 void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
-                        Eigen::Ref<Eigen::MatrixXd> Lxx,
-                        const Eigen::Ref<const Eigen::VectorXd> &x) {
+                               Eigen::Ref<Eigen::MatrixXd> Lxx,
+                               const Eigen::Ref<const Eigen::VectorXd> &x) {
   CHECK(model, AT);
   check_input_calcDiff(Lx, Lxx, x);
   Jx.setZero();
@@ -711,8 +711,6 @@ void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
     }
   }
 };
-
-
 
 // void Col_cost::calcDiff(Eigen::Ref<Eigen::MatrixXd> Jx,
 //                         Eigen::Ref<Eigen::MatrixXd> Ju,
