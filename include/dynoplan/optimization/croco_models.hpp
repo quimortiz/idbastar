@@ -919,6 +919,70 @@ private:
   //                       const Eigen::Ref<const Eigen::VectorXd> &x);
 };
 
+struct Col_cost_moving : Cost {
+
+  std::shared_ptr<dynobench::Model_robot> model;
+  double margin = .03;
+  double last_raw_d = 0;
+  double weight;
+  Eigen::VectorXd last_x;
+  Eigen::VectorXd last_grad;
+  dynobench::CollisionOut cinfo;
+  Eigen::MatrixXd Jx;
+  Eigen::VectorXd v__; //  data
+
+  // TODO: check that the sec_factor is actually save in a test
+  double sec_factor = .1;
+
+  // what about a log barrier function? -- maybe I get better gradients
+
+  double faraway_zero_gradient_bound = 1.1 * margin;
+  // returns 0 gradient if distance is > than THIS.
+  double epsilon = 1e-3; // finite diff
+  //
+  size_t time_index = 0;
+
+  Col_cost_moving(size_t time_index,
+    size_t nx, size_t nu, size_t nr,
+           std::shared_ptr<dynobench::Model_robot> model, double weight = 100.);
+
+  virtual ~Col_cost_moving() = default;
+
+  virtual void calc(Eigen::Ref<Eigen::VectorXd> r,
+                    const Eigen::Ref<const Eigen::VectorXd> &x,
+                    const Eigen::Ref<const Eigen::VectorXd> &u) override;
+
+  virtual void calc(Eigen::Ref<Eigen::VectorXd> r,
+                    const Eigen::Ref<const Eigen::VectorXd> &x) override;
+
+  virtual void calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
+                        Eigen::Ref<Eigen::MatrixXd> Lxx,
+                        const Eigen::Ref<const Eigen::VectorXd> &x) override;
+
+  virtual void calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
+                        Eigen::Ref<Eigen::VectorXd> Lu,
+                        Eigen::Ref<Eigen::MatrixXd> Lxx,
+                        Eigen::Ref<Eigen::MatrixXd> Luu,
+                        Eigen::Ref<Eigen::MatrixXd> Lxu,
+                        const Eigen::Ref<const Eigen::VectorXd> &x,
+                        const Eigen::Ref<const Eigen::VectorXd> &u) override;
+
+  void set_nx_effective(size_t nx_effective) {
+    this->nx_effective = nx_effective;
+    v__.resize(nx_effective);
+  }
+
+  size_t get_nx_effective() { return nx_effective; }
+
+private:
+  size_t nx_effective;
+
+};
+
+
+
+
+
 struct Control_cost : Cost {
 
   Eigen::VectorXd u_weight;

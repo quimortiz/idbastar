@@ -611,6 +611,107 @@ void Col_cost::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
   }
 };
 
+Col_cost_moving::Col_cost_moving(size_t time_index, size_t nx, size_t nu,
+                                 size_t nr,
+                                 std::shared_ptr<dynobench::Model_robot> model,
+                                 double weight)
+    : Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight) {
+  last_x = Vxd::Ones(nx);
+  name = "collision";
+  nx_effective = nx;
+
+  Jx.resize(1, nx);
+  Jx.setZero();
+
+  v__.resize(nx);
+  v__.setZero();
+}
+
+void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x,
+                           const Eigen::Ref<const Vxd> &u) {
+  check_input_calc(r, x, u);
+  calc(r, x);
+}
+
+void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x) {
+  check_input_calc(r, x);
+
+  CHECK(model, AT);
+  double raw_d;
+  bool check_one =
+      (x.head(nx_effective) - last_x.head(nx_effective)).norm() < 1e-8;
+  bool check_two = (last_raw_d - margin) > 0 &&
+                   (x.head(nx_effective) - last_x.head(nx_effective)).norm() <
+                       sec_factor * (last_raw_d - margin);
+
+  // std::cout << "checking collisions " << std::endl;
+
+  if (check_one || check_two) {
+    raw_d = last_raw_d;
+  } else {
+    model->collision_distance_time(x.head(nx_effective), time_index, cinfo);
+    // std::cout << "col cost moving, cinfo.distance: " << cinfo.distance <<
+    // std::endl;
+    raw_d = cinfo.distance;
+    last_x = x;
+    last_raw_d = raw_d;
+    // std::cout << " x " << STR_V(x) << " " << raw_d << std::endl;
+  }
+  double d = weight * (raw_d - margin);
+  auto out = Eigen::Matrix<double, 1, 1>(std::min(d, 0.));
+  r = out;
+  // std::cout << "r col is " << r << " x " << STR_V(x) << std::endl;
+}
+
+void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
+                               Eigen::Ref<Eigen::VectorXd> Lu,
+                               Eigen::Ref<Eigen::MatrixXd> Lxx,
+                               Eigen::Ref<Eigen::MatrixXd> Luu,
+                               Eigen::Ref<Eigen::MatrixXd> Lxu,
+                               const Eigen::Ref<const Eigen::VectorXd> &x,
+                               const Eigen::Ref<const Eigen::VectorXd> &u) {
+  check_input_calcDiff(Lx, Lu, Lxx, Luu, Lxu, x, u);
+  calcDiff(Lx, Lxx, x);
+}
+
+void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
+                               Eigen::Ref<Eigen::MatrixXd> Lxx,
+                               const Eigen::Ref<const Eigen::VectorXd> &x) {
+  CHECK(model, AT);
+  check_input_calcDiff(Lx, Lxx, x);
+  Jx.setZero();
+
+  double raw_d, d;
+  bool check_one =
+      (x - last_x).squaredNorm() < 1e-8 && (last_raw_d - margin) > 0;
+  bool check_two = (last_raw_d - margin) > 0 &&
+                   (x - last_x).norm() < sec_factor * (last_raw_d - margin);
+
+  if (check_one || check_two) {
+    ;
+  } else {
+    v__.setZero();
+    model->collision_distance_time_diff(v__, raw_d, x, time_index);
+    last_x = x;
+    last_raw_d = raw_d;
+    d = weight * (raw_d - margin);
+    v__ = v__ * weight;
+    if (d <= 0) {
+      Jx.block(0, 0, 1, nx_effective) = v__.transpose();
+      Lx += d * Jx.transpose();
+      Lxx += Jx.transpose() * Jx;
+      // std::cout << "contribution from collisions" << std::endl;
+      // std::cout << "x " << STR_V(x) << std::endl;
+      // std::cout << "Lx " << std::endl;
+      // std::cout << Lx << std::endl;
+      // std::cout << "Lxx " << std::endl;
+      // std::cout << Lxx << std::endl;
+    } else {
+      ;
+    }
+  }
+};
+
 // void Col_cost::calcDiff(Eigen::Ref<Eigen::MatrixXd> Jx,
 //                         Eigen::Ref<Eigen::MatrixXd> Ju,
 //                         const Eigen::Ref<const Vxd> &x,
