@@ -203,12 +203,11 @@ int main(int argc, const char *argv[]) {
   }
 
 #endif
-
   if (result.feasible) {
     std::cout << "croco success -- returning " << std::endl;
-    return EXIT_SUCCESS;
+    return 0;
   } else {
     std::cout << "croco failed -- returning " << std::endl;
-    return EXIT_FAILURE;
+    return 0;
   }
 }
