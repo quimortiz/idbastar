@@ -177,9 +177,9 @@ int highLevelfocalHeuristicState(
   return numConflicts;
 }
 
-// state-based focal heuristic, doesn't work with car with trailer
+// pair-wise checking, doesn't work with car with trailer
 // for simplicity I assume robot_objs.size() = robot number. TO DO
-int lowLevelfocalHeuristicStatePrecise(
+int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
@@ -215,7 +215,7 @@ int lowLevelfocalHeuristicStatePrecise(
 
       all_robots[current_robot_idx]->transformation_collision_geometries(
           state1, tmp_ts1);
-      fcl::Transform3d &transform = tmp_ts1[0];
+      fcl::Transform3d &transform = tmp_ts1[0]; // no trailer
       robot_objs[current_robot_idx]->setTranslation(transform.translation());
       robot_objs[current_robot_idx]->setRotation(transform.rotation());
       robot_objs[current_robot_idx]->computeAABB();
@@ -230,7 +230,7 @@ int lowLevelfocalHeuristicStatePrecise(
           }
           all_robots[robot_idx]->transformation_collision_geometries(state2,
                                                                      tmp_ts2);
-          fcl::Transform3d &transform = tmp_ts2[0];
+          fcl::Transform3d &transform = tmp_ts2[0]; // no trailer
           robot_objs[robot_idx]->setTranslation(transform.translation());
           robot_objs[robot_idx]->setRotation(transform.rotation());
           robot_objs[robot_idx]->computeAABB();
@@ -857,17 +857,18 @@ void tdbastar_epsilon(
                       options_tdbastar.cost_delta_factor *
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
-      // it laso based on assumption that I am expanding from the version of the
-      // best node with least/min focalHeuristic
+
+      focalHeuristic =
+          best_node_bestFocalHeuristic +
+          lowLevelfocalHeuristicSequential(
+              solution, time_bench, all_robots, traj_wrapper, robot_id,
+              best_node->gScore, robot_objs, reachesGoal);
+
       // focalHeuristic = best_node_bestFocalHeuristic +
-      //                  lowLevelfocalHeuristicStatePrecise(
-      //                      solution, all_robots, traj_wrapper, robot_id,
-      //                      best_node->gScore, robot_objs, reachesGoal);
-      focalHeuristic = best_node_bestFocalHeuristic +
-                       lowLevelfocalHeuristicState(
-                           solution, time_bench, all_robots, traj_wrapper,
-                           robot_id, best_node->gScore, col_mng_robots,
-                           robot_objs, reachesGoal, run_focal_heuristic);
+      //  lowLevelfocalHeuristicState(
+      //  solution, time_bench, all_robots, traj_wrapper,
+      //  robot_id, best_node->gScore, col_mng_robots,
+      //  robot_objs, reachesGoal, run_focal_heuristic);
 
       auto tmp_traj = dynobench::trajWrapper_2_Trajectory(traj_wrapper);
       tmp_traj.cost = best_node->gScore;
