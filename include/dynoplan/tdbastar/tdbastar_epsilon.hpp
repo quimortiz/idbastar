@@ -77,8 +77,7 @@ int highLevelfocalHeuristicState(
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs);
 
-// computationally less efficient version of the low-level focal heuristic
-int lowLevelfocalHeuristicStatePrecise(
+int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
