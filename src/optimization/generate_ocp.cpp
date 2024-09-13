@@ -227,13 +227,15 @@ generate_problem(const Generate_params &gen_args,
       ptr<Cost> state_feature =
           mk<State_cost>(nx, nu, nx, state_weights, state_ref);
       feats_run.push_back(state_feature);
-      ptr<Cost> acc_feature =
-          mk<dintegratorCables_acceleration_cost>(gen_args.model_robot);
-      boost::static_pointer_cast<dintegratorCables_acceleration_cost>(acc_feature)
-          ->k_acc = 0.1;
 
-      feats_run.push_back(acc_feature);
-      }
+      /*ptr<Cost> acc_feature =*/
+      /*    mk<dintegratorCables_acceleration_cost>(gen_args.model_robot);*/
+      /*boost::static_pointer_cast<dintegratorCables_acceleration_cost>(acc_feature)*/
+      /*    ->k_acc = 0.1;*/
+      /**/
+      /*feats_run.push_back(acc_feature);*/
+      
+    }
       
     if (startsWith(gen_args.name, "quad3d")) {
       if (control_mode == Control_Mode::default_mode) {
