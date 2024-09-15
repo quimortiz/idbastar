@@ -1491,6 +1491,61 @@ Quad3d_acceleration_cost::Quad3d_acceleration_cost(
   f.setZero();
 }
 
+dintegratorCables_acceleration_cost::dintegratorCables_acceleration_cost(
+    const std::shared_ptr<dynobench::Model_robot> &model_robot)
+    : Cost(8, 4, 4), model(model_robot) {
+  name = "accel_dintegratorcables";
+
+  acc_u.setZero();
+  acc_x.setZero();
+  Jv_x.setZero();
+  Jv_u.setZero();
+  f.setZero();
+}
+
+void dintegratorCables_acceleration_cost::calc(
+    Eigen::Ref<Eigen::VectorXd> r, const Eigen::Ref<const Eigen::VectorXd> &x,
+    const Eigen::Ref<const Eigen::VectorXd> &u) {
+  model->calcV(f, x, u);
+  acc = f.tail<4>();
+  r = k_acc * acc;
+}
+
+void dintegratorCables_acceleration_cost::calcDiff(
+    Eigen::Ref<Eigen::VectorXd> Lx, Eigen::Ref<Eigen::VectorXd> Lu,
+    Eigen::Ref<Eigen::MatrixXd> Lxx, Eigen::Ref<Eigen::MatrixXd> Luu,
+    Eigen::Ref<Eigen::MatrixXd> Lxu, const Eigen::Ref<const Eigen::VectorXd> &x,
+    const Eigen::Ref<const Eigen::VectorXd> &u) {
+  model->calcV(f, x, u);
+  acc = f.tail<4>();
+  model->calcDiffV(Jv_x, Jv_u, x, u);
+
+  // CSTR_V(acc);
+  // std::cout << "Jv_x\n" << Jv_x << std::endl;
+  // std::cout << "Jv_u\n" << Jv_u <<  std::endl;
+
+  DYNO_CHECK_EQ(f.size(), 8, AT);
+  DYNO_CHECK_EQ(acc.size(), 4, AT);
+  DYNO_CHECK_EQ(Jv_x.cols(), 8, AT);
+  DYNO_CHECK_EQ(Jv_u.cols(), 4, AT);
+
+  DYNO_CHECK_EQ(Jv_x.rows(), 8, AT);
+  DYNO_CHECK_EQ(Jv_u.rows(), 8, AT);
+
+  acc_x = Jv_x.block<4, 8>(4, 0);
+  acc_u = Jv_u.block<4, 4>(4, 0);
+
+  double k_acc_sq = k_acc * k_acc;
+  Lx += k_acc_sq * acc.transpose() * acc_x;
+  // CSTR_(Lu);
+  Lu += k_acc_sq * acc.transpose() * acc_u;
+  // CSTR_(Lu);
+
+  Lxx += k_acc_sq * acc_x.transpose() * acc_x;
+  Luu += k_acc_sq * acc_u.transpose() * acc_u;
+  Lxu += k_acc_sq * acc_x.transpose() * acc_u;
+}
+
 void Quad3d_acceleration_cost::calc(
     Eigen::Ref<Eigen::VectorXd> r, const Eigen::Ref<const Eigen::VectorXd> &x,
     const Eigen::Ref<const Eigen::VectorXd> &u) {

@@ -213,6 +213,30 @@ generate_problem(const Generate_params &gen_args,
       feats_run.push_back(state_feature);
     }
 
+    if (startsWith(gen_args.name, "DintegratorCables")) {
+      std::cout << "adding regularization on vx vy dth1, dth2\n" << std::endl;
+      // TODO: refactor so that the features are local to the robots!!
+      Vxd state_weights(nx);
+      Vxd state_ref = Vxd::Zero(nx);
+      
+      state_weights.setOnes();
+      state_weights *= 0.1;
+      // state_weights.segment<4>(4) = 0.001 *V4d::Ones();
+      // state_weights.setZero();
+
+      ptr<Cost> state_feature =
+          mk<State_cost>(nx, nu, nx, state_weights, state_ref);
+      feats_run.push_back(state_feature);
+
+      /*ptr<Cost> acc_feature =*/
+      /*    mk<dintegratorCables_acceleration_cost>(gen_args.model_robot);*/
+      /*boost::static_pointer_cast<dintegratorCables_acceleration_cost>(acc_feature)*/
+      /*    ->k_acc = 0.1;*/
+      /**/
+      /*feats_run.push_back(acc_feature);*/
+      
+    }
+      
     if (startsWith(gen_args.name, "quad3d")) {
       if (control_mode == Control_Mode::default_mode) {
         std::cout << "adding regularization on w and v, q" << std::endl;
