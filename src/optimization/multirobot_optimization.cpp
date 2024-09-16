@@ -140,7 +140,7 @@ bool execute_optimizationMetaRobot(
         << std::endl;
   }
 
-  options_trajopt.solver_id = 1; // no moving obstacles
+  options_trajopt.solver_id = 0; // 1 - no moving obstacles
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
   options_trajopt.weight_goal = 600;
