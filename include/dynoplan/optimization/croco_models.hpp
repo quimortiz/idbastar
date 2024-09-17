@@ -941,10 +941,12 @@ struct Col_cost_moving : Cost {
   double epsilon = 1e-3; // finite diff
   //
   size_t time_index = 0;
+  // to define if the moving obstacles should be hard or soft constrained
+  bool hard_constrained_collision = true;
 
-  Col_cost_moving(size_t time_index,
-    size_t nx, size_t nu, size_t nr,
-           std::shared_ptr<dynobench::Model_robot> model, double weight = 100.);
+  Col_cost_moving(size_t time_index, size_t nx, size_t nu, size_t nr,
+                  std::shared_ptr<dynobench::Model_robot> model,
+                  double weight = 100., bool hard_constrained_collision = true);
 
   virtual ~Col_cost_moving() = default;
 
@@ -976,12 +978,7 @@ struct Col_cost_moving : Cost {
 
 private:
   size_t nx_effective;
-
 };
-
-
-
-
 
 struct Control_cost : Cost {
 

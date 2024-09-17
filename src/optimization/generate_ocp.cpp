@@ -174,10 +174,7 @@ generate_problem(const Generate_params &gen_args,
       if (gen_args.contour_control)
         boost::static_pointer_cast<Col_cost>(cl_feature)
             ->set_nx_effective(nx - 1);
-    }
-    // else if ( !gen_args.time_variant_collisions ) {
-    //
-    else if (time_variant_collision && gen_args.collisions) {
+    } else if (time_variant_collision && gen_args.collisions) {
       ptr<Cost> cl_feature = mk<Col_cost_moving>(
           t, nx, nu, 1, gen_args.model_robot, options_trajopt.collision_weight);
       feats_run.push_back(cl_feature);
@@ -186,8 +183,19 @@ generate_problem(const Generate_params &gen_args,
         boost::static_pointer_cast<Col_cost>(cl_feature)
             ->set_nx_effective(nx - 1);
     }
+    // for soft constrained moving obstacles
+    bool time_variant_collision_soft =
+        gen_args.model_robot->time_varying_env_soft.size();
+    if (time_variant_collision_soft && gen_args.collisions) {
+      ptr<Cost> cl_feature = mk<Col_cost_moving>(
+          t, nx, nu, 1, gen_args.model_robot, /*collision_weight*/ 10,
+          /*hard_constrained_collision*/ false);
+      feats_run.push_back(cl_feature);
 
-    //
+      if (gen_args.contour_control)
+        boost::static_pointer_cast<Col_cost>(cl_feature)
+            ->set_nx_effective(nx - 1);
+    }
 
     if (startsWith(gen_args.name, "car1")) {
 

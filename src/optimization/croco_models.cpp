@@ -614,7 +614,7 @@ void Col_cost::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
 Col_cost_moving::Col_cost_moving(size_t time_index, size_t nx, size_t nu,
                                  size_t nr,
                                  std::shared_ptr<dynobench::Model_robot> model,
-                                 double weight)
+                                 double weight, bool hard_constrained_collision)
     : Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight) {
   last_x = Vxd::Ones(nx);
   name = "collision";
@@ -649,18 +649,15 @@ void Col_cost_moving::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x) {
   if (check_one || check_two) {
     raw_d = last_raw_d;
   } else {
-    model->collision_distance_time(x.head(nx_effective), time_index, cinfo);
-    // std::cout << "col cost moving, cinfo.distance: " << cinfo.distance <<
-    // std::endl;
+    model->collision_distance_time(x.head(nx_effective), time_index, cinfo,
+                                   hard_constrained_collision);
     raw_d = cinfo.distance;
     last_x = x;
     last_raw_d = raw_d;
-    // std::cout << " x " << STR_V(x) << " " << raw_d << std::endl;
   }
   double d = weight * (raw_d - margin);
   auto out = Eigen::Matrix<double, 1, 1>(std::min(d, 0.));
   r = out;
-  // std::cout << "r col is " << r << " x " << STR_V(x) << std::endl;
 }
 
 void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
@@ -691,7 +688,8 @@ void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
     ;
   } else {
     v__.setZero();
-    model->collision_distance_time_diff(v__, raw_d, x, time_index);
+    model->collision_distance_time_diff(v__, raw_d, x, time_index,
+                                        hard_constrained_collision);
     last_x = x;
     last_raw_d = raw_d;
     d = weight * (raw_d - margin);
@@ -700,63 +698,11 @@ void Col_cost_moving::calcDiff(Eigen::Ref<Eigen::VectorXd> Lx,
       Jx.block(0, 0, 1, nx_effective) = v__.transpose();
       Lx += d * Jx.transpose();
       Lxx += Jx.transpose() * Jx;
-      // std::cout << "contribution from collisions" << std::endl;
-      // std::cout << "x " << STR_V(x) << std::endl;
-      // std::cout << "Lx " << std::endl;
-      // std::cout << Lx << std::endl;
-      // std::cout << "Lxx " << std::endl;
-      // std::cout << Lxx << std::endl;
     } else {
       ;
     }
   }
 };
-
-// void Col_cost::calcDiff(Eigen::Ref<Eigen::MatrixXd> Jx,
-//                         Eigen::Ref<Eigen::MatrixXd> Ju,
-//                         const Eigen::Ref<const Vxd> &x,
-//                         const Eigen::Ref<const Vxd> &u) {
-//
-//   assert(static_cast<std::size_t>(x.size()) == nx);
-//   assert(static_cast<std::size_t>(u.size()) == nu);
-//
-//   std::vector<double> query{x.data(), x.data() + nx_effective};
-//   double raw_d, d;
-//   Vxd v(nx);
-//   bool check_one =
-//       (x - last_x).squaredNorm() < 1e-8 && (last_raw_d - margin) > 0;
-//   bool check_two = (last_raw_d - margin) > 0 &&
-//                    (x - last_x).norm() < sec_factor * (last_raw_d -
-//                    margin);
-//
-//   if (check_one || check_two) {
-//     Jx.setZero();
-//   } else {
-//     auto out = cl->distanceWithFDiffGradient(
-//         query, faraway_zero_gradient_bound, epsilon,
-//         non_zero_flags.size() ? &non_zero_flags : nullptr);
-//     raw_d = std::get<0>(out);
-//     last_x = x;
-//     last_raw_d = raw_d;
-//     d = options_trajopt.collision_weight * (raw_d - margin);
-//     auto grad = std::get<1>(out);
-//     v = options_trajopt.collision_weight * Vxd::Map(grad.data(),
-//     grad.size()); if (d <= 0) {
-//       Jx.block(0, 0, 1, nx_effective) = v.transpose();
-//     } else {
-//       Jx.setZero();
-//     }
-//   }
-//   Ju.setZero();
-// };
-
-// void Col_cost::calcDiff(Eigen::Ref<Eigen::MatrixXd> Jx,
-//                         const Eigen::Ref<const Vxd> &x) {
-//
-//   auto Ju = Eigen::MatrixXd(1, 1);
-//   auto u = Vxd(1);
-//   calcDiff(Jx, Ju, x, u);
-// }
 
 Control_cost::Control_cost(size_t nx, size_t nu, size_t nr,
                            const Vxd &t_u_weight, const Vxd &t_u_ref)
