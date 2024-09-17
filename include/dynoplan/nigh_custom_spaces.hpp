@@ -686,6 +686,20 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
     DYNO_CHECK_EQ(w.size(), 3, AT);
     __SpaceCar1 space(w(0), w(1), w(2));
     out = new NearestNeighborsNigh<_T, __SpaceCar1>(space, data_to_key);
+  // } else if (startsWith(name, "quad3d")) {
+  //   auto data_to_key = [robot, fun, reverse_search](_T const &m) {
+  //     using Vector13d = Eigen::Matrix<double, 13, 1>;
+  //     Vector13d __x = fun(m, reverse_search, robot->translation_invariance);
+  //     return std::tuple(Eigen::Vector3d(__x(0), __x(1), __x(2)),
+  //                       Eigen::Quaterniond(__x(3), __x(4), __x(5), __x(6)),
+  //                       Eigen::Vector3d(__x(7), __x(8), __x(9)),
+  //                       Eigen::Vector3d(__x(10), __x(11), __x(12)));    
+  //     };
+
+  //   DYNO_CHECK_EQ(w.size(), 4, AT);
+  //   __SpaceQuad3d space(w(0), w(1), w(2), w(3));
+  //   out = new NearestNeighborsNigh<_T, __SpaceQuad3d>(space, data_to_key);
+
   }
 
   CHECK(out, AT);

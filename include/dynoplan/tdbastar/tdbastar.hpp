@@ -191,7 +191,7 @@ struct LazyTraj {
     }
     // reverse, assumes 2d
     else {
-      robot->transform_primitive(*offset - motion->traj.states.back().head(2),
+      robot->transform_primitive(*offset - motion->traj.states.back().head(robot->translation_invariance),
                                  motion->traj.states, motion->traj.actions, tmp,
                                  check_state, num_valid_states);
     }
