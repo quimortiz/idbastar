@@ -615,7 +615,8 @@ Col_cost_moving::Col_cost_moving(size_t time_index, size_t nx, size_t nu,
                                  size_t nr,
                                  std::shared_ptr<dynobench::Model_robot> model,
                                  double weight, bool hard_constrained_collision)
-    : Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight) {
+    : Cost(nx, nu, nr), time_index(time_index), model(model), weight(weight),
+      hard_constrained_collision(hard_constrained_collision) {
   last_x = Vxd::Ones(nx);
   name = "collision";
   nx_effective = nx;

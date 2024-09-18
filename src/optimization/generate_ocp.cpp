@@ -176,7 +176,8 @@ generate_problem(const Generate_params &gen_args,
             ->set_nx_effective(nx - 1);
     } else if (time_variant_collision && gen_args.collisions) {
       ptr<Cost> cl_feature = mk<Col_cost_moving>(
-          t, nx, nu, 1, gen_args.model_robot, options_trajopt.collision_weight);
+          t, nx, nu, 1, gen_args.model_robot, options_trajopt.collision_weight,
+          /*hard_constrained_collision*/ true);
       feats_run.push_back(cl_feature);
 
       if (gen_args.contour_control)
@@ -188,7 +189,7 @@ generate_problem(const Generate_params &gen_args,
         gen_args.model_robot->time_varying_env_soft.size();
     if (time_variant_collision_soft && gen_args.collisions) {
       ptr<Cost> cl_feature = mk<Col_cost_moving>(
-          t, nx, nu, 1, gen_args.model_robot, /*collision_weight*/ 10,
+          t, nx, nu, 1, gen_args.model_robot, /*collision_weight*/ 20,
           /*hard_constrained_collision*/ false);
       feats_run.push_back(cl_feature);
 
