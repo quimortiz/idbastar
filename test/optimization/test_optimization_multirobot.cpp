@@ -838,3 +838,40 @@ BOOST_AUTO_TEST_CASE(t_moving_obstacles) {
 
   sol.to_yaml_format("moving_obs_swap4_drone.yaml");
 }
+
+// residual force included
+BOOST_AUTO_TEST_CASE(t_coupled_integrator2d) {
+
+  Options_trajopt options_trajopt;
+  std::string env_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
+      "example/straight_integrator2d_coupled.yaml";
+  std::string initial_guess_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
+      "results/straight_integrator2d_coupled_db.yaml";
+
+  Problem problem(env_file);
+  Trajectory init_guess(initial_guess_file);
+
+  options_trajopt.solver_id = static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  problem.models_base_path =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
+
+  Result_opti result;
+  Trajectory sol;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, result);
+  BOOST_TEST_CHECK(result.feasible);
+  std::cout << "cost is " << result.cost << std::endl;
+
+  std::vector<int> index_time_goals{sol.states.size(), sol.states.size()};
+  std::vector<int> nxs{4, 4};
+  std::vector<int> nus{2, 2};
+  MultiRobotTrajectory multi_out =
+      from_joint_to_indiv_trajectory(sol, nxs, nus, index_time_goals);
+
+  multi_out.to_yaml_format("integrator2d_coupled_opt.yaml");
+}
