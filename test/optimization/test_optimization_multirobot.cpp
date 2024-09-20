@@ -844,16 +844,14 @@ BOOST_AUTO_TEST_CASE(t_coupled_integrator2d) {
 
   Options_trajopt options_trajopt;
   std::string env_file =
-      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
-      "example/straight_integrator2d_coupled.yaml";
+      "/home/akmarak-laptop/IMRC/db-CBS/example/swap2_integrator2_coupled.yaml";
   std::string initial_guess_file =
-      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/envs/multirobot/"
-      "results/straight_integrator2d_coupled_db.yaml";
+      "/home/akmarak-laptop/IMRC/db-CBS/results/result_dbecbs_joint.yaml";
 
   Problem problem(env_file);
   Trajectory init_guess(initial_guess_file);
 
-  options_trajopt.solver_id = static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
   options_trajopt.weight_goal = 100;
@@ -873,5 +871,5 @@ BOOST_AUTO_TEST_CASE(t_coupled_integrator2d) {
   MultiRobotTrajectory multi_out =
       from_joint_to_indiv_trajectory(sol, nxs, nus, index_time_goals);
 
-  multi_out.to_yaml_format("integrator2d_coupled_opt.yaml");
+  multi_out.to_yaml_format("../../results/integrator2d_coupled_opt.yaml");
 }
