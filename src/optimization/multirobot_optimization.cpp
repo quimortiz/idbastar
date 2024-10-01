@@ -91,8 +91,10 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 bool execute_optimizationMetaRobot(
     const std::string &env_file,
     MultiRobotTrajectory &init_guess_multi_robot, // discrete search
-    MultiRobotTrajectory &multi_robot_out, const std::string &dynobench_base,
-    std::unordered_set<size_t> &cluster, bool sum_robots_cost = true) {
+    MultiRobotTrajectory
+        &multi_robot_out, // output, initialized with parallel_opt
+    const std::string &dynobench_base, std::unordered_set<size_t> &cluster,
+    bool sum_robots_cost = true, bool residual_force) {
 
   using namespace dynoplan;
   using namespace dynobench;
@@ -102,7 +104,6 @@ bool execute_optimizationMetaRobot(
 
   std::vector<int> goal_times; // (cluster.size());
   std::vector<int> all_goal_times;
-
   size_t index = 0;
   for (size_t i = 0; i < init_guess_multi_robot.trajectories.size(); i++) {
     // all_goal_times.push_back(traj.states.size());
@@ -165,10 +166,9 @@ bool execute_optimizationMetaRobot(
 
   std::cout << "optimization done! " << std::endl;
   // merge solutions if the optimization is feasible
-
-  std::vector<int> index_time_goals; // for all robots
   size_t num_robots =
       init_guess_multi_robot.get_num_robots(); // all robots from sequenuence
+  std::vector<int> index_time_goals;           // for all robots
   if (problem.goal_times.size()) {
     size_t j = 0; // keep track of cluster robots
     for (size_t i = 0; i < num_robots; i++) {
@@ -182,7 +182,7 @@ bool execute_optimizationMetaRobot(
   }
 
   from_joint_to_indiv_trajectory_meta(
-      cluster, sol, multi_robot_out,
-      index_time_goals); // time matters only for cluster
+      cluster, sol, multi_robot_out, index_time_goals,
+      residual_force); // time matters only for cluster
   return true;
 }

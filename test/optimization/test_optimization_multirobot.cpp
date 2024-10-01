@@ -947,6 +947,15 @@ BOOST_AUTO_TEST_CASE(t_joint_integrator3d) {
   std::vector<int> nus{3, 3};
   MultiRobotTrajectory multi_out =
       from_joint_to_indiv_trajectory(sol2, nxs, nus, index_time_goals);
-
-  multi_out.to_yaml_format("../../results/integrator3d_joint_opt.yaml");
+  std::string optimizationFile = "../../results/integrator3d_joint_opt.yaml";
+  multi_out.to_yaml_format(optimizationFile.c_str());
+  // save the residual force for one of robots, robot id = 1, which passes under
+  bool debug = false;
+  if (debug) {
+    std::ofstream fout(optimizationFile, std::ios::app);
+    fout << "fa:" << std::endl;
+    for (auto &s : sol.states) {
+      fout << "  - " << s(6) * 101.97 << std::endl; // in gramms
+    }
+  }
 }
