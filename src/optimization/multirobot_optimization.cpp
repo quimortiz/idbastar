@@ -93,6 +93,7 @@ bool execute_optimizationMetaRobot(
     MultiRobotTrajectory &init_guess_multi_robot, // discrete search
     MultiRobotTrajectory
         &multi_robot_out, // output, initialized with parallel_opt
+    std::vector<std::vector<float>> &residual_forces,
     const std::string &dynobench_base, std::unordered_set<size_t> &cluster,
     bool sum_robots_cost = true, bool residual_force) {
 
@@ -180,9 +181,9 @@ bool execute_optimizationMetaRobot(
       }
     }
   }
-
+  // removes the f from the solution
   from_joint_to_indiv_trajectory_meta(
-      cluster, sol, multi_robot_out, index_time_goals,
+      cluster, sol, multi_robot_out, residual_forces, index_time_goals,
       residual_force); // time matters only for cluster
   return true;
 }

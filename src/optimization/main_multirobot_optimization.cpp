@@ -171,12 +171,14 @@ int main(int argc, char *argv[]) {
   MultiRobotTrajectory multi_out = parallel_multirobot_sol;
   // if the cluster is known then run only this
   std::unordered_set<size_t> cluster{3, 5};
+  std::vector<std::vector<float>> residual_forces;
+  // residual_forces(4, std::vector<float>(2, 0.0)); // fix the size, hrad coded
   std::string env_file_id = "/home/akmarak-laptop/IMRC/db-CBS/results/"
                             "static_obs/drone12c/tmp_envFile.yaml";
   // test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
-  bool feasible =
-      execute_optimizationMetaRobot(env_file_id, discrete_search_sol, multi_out,
-                                    dynobench_base, cluster, sum_robots_cost);
+  bool feasible = execute_optimizationMetaRobot(
+      env_file_id, discrete_search_sol, multi_out, residual_forces,
+      dynobench_base, cluster, sum_robots_cost);
   if (feasible)
     multi_out.to_yaml_format(outFile.c_str());
 }

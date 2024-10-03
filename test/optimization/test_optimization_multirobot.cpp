@@ -889,7 +889,7 @@ BOOST_AUTO_TEST_CASE(t_coupled_integrator3d) {
   options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 400;
   options_trajopt.max_iter = 50;
   problem.models_base_path =
       "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
@@ -913,19 +913,23 @@ BOOST_AUTO_TEST_CASE(t_coupled_integrator3d) {
 BOOST_AUTO_TEST_CASE(t_joint_integrator3d) {
 
   Options_trajopt options_trajopt;
-  std::string env_file = "/home/akmarak-laptop/IMRC/db-CBS/example/"
-                         "swap2_integrator2_3d_coupled.yaml";
+  // std::string env_file =
+  // "/home/akmarak-laptop/IMRC/db-CBS/example/swap2_integrator2_3d_coupled.yaml";
+  // std::string initial_guess_file =
+  // "/home/akmarak-laptop/IMRC/db-CBS/results/result_joint.yaml";
+  std::string env_file =
+      "/home/akmarak-laptop/IMRC/db-CBS/example/debug_nn.yaml";
   std::string initial_guess_file =
-      "/home/akmarak-laptop/IMRC/db-CBS/results/result_dbecbs_joint.yaml";
-
+      "/home/akmarak-laptop/IMRC/db-CBS/results/debug_nn_joint.yaml";
   Problem problem(env_file);
   Trajectory init_guess(initial_guess_file);
 
   options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100;
+  options_trajopt.weight_goal = 200;
   options_trajopt.max_iter = 50;
+  options_trajopt.collision_weight = 200;
   problem.models_base_path =
       "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
 
@@ -947,14 +951,15 @@ BOOST_AUTO_TEST_CASE(t_joint_integrator3d) {
   std::vector<int> nus{3, 3};
   MultiRobotTrajectory multi_out =
       from_joint_to_indiv_trajectory(sol2, nxs, nus, index_time_goals);
-  std::string optimizationFile = "../../results/integrator3d_joint_opt.yaml";
+  std::string optimizationFile = "../../results/result_opt_debug.yaml";
   multi_out.to_yaml_format(optimizationFile.c_str());
   // save the residual force for one of robots, robot id = 1, which passes under
-  bool debug = false;
+  bool debug = true;
   if (debug) {
     std::ofstream fout(optimizationFile, std::ios::app);
     fout << "fa:" << std::endl;
     for (auto &s : sol.states) {
+      std::cout << s(6) * 101.97 << std::endl;      // in grams
       fout << "  - " << s(6) * 101.97 << std::endl; // in gramms
     }
   }
