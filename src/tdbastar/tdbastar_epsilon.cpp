@@ -428,6 +428,7 @@ void tdbastar_epsilon(
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs,
+    double &low_cost_bound,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result,
     float w, bool run_focal_heuristic) {
@@ -540,6 +541,12 @@ void tdbastar_epsilon(
   start_node->current_arrival_idx = 0;
   start_node->bestFocalHeuristic = 0;
   start_node->best_focal_arrival_idx = 0;
+
+  bool initialized_hScore = false;
+  if(!reverse_search && low_cost_bound == -1.0) {
+    low_cost_bound = start_node->hScore;
+    initialized_hScore = true;
+  }
 
   DYNO_CHECK_GEQ(start_node->hScore, 0, "hScore should be positive");
   DYNO_CHECK_LEQ(start_node->hScore, 1e5, "hScore should be bounded");
@@ -858,6 +865,12 @@ void tdbastar_epsilon(
                       options_tdbastar.cost_delta_factor *
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
+
+      if(gScore >= low_cost_bound && !reverse_search && !initialized_hScore) {
+        //std::cout << "gScore: " << gScore << " low_cost_bound: " << low_cost_bound << " num_expansion_best_node: "<< num_expansion_best_node<< " expanded_trajs size: "<< expanded_trajs.size() <<std::endl;
+        continue;
+      }
+
       // it laso based on assumption that I am expanding from the version of the
       // best node with least/min focalHeuristic
       focalHeuristic =

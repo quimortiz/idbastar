@@ -58,6 +58,7 @@ void tdbastar_epsilon(
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs,
+    double &low_cost_bound,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =
         nullptr,

@@ -9,7 +9,9 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
                                     const std::string &initial_guess_file,
                                     const std::string &output_file,
                                     const std::string &dynobench_base,
-                                    bool sum_robots_cost) {
+                                    bool sum_robots_cost,
+                                    int iteration,
+                                    MultiRobotTrajectory &multi_robot_trajectory) {
 
   using namespace dynoplan;
   using namespace dynobench;
@@ -84,6 +86,14 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 
   multi_out.to_yaml_format("/tmp/check5.yaml");
   multi_out.to_yaml_format(output_file.c_str());
+
+  for (auto &traj : multi_out.trajectories) {
+    traj.cost = traj.actions.size() * 0.1;
+  }
+  multi_robot_trajectory = multi_out;
+
+  string rawname = output_file.substr(0, fullname.find_last_of("."));
+  multi_out.to_yaml_format((rawname + "_" + std::to_string(iteration)+ ".yaml").c_str());
 
   return true;
 }
