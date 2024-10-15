@@ -568,6 +568,36 @@ ompl::NearestNeighbors<_T> *nigh_factory2(
     out = new NearestNeighborsNigh<_T, __SpaceCar1>(space, data_to_key);
   }
 
+} else if (startsWith(name, "differential_drive")) {
+
+  if (cost_scale < 0) {
+    auto data_to_key = [robot, fun](_T const &m) {
+      // DYNO_CHECK_EQ(fun(m).size(), 3, ""); //
+      // assert(fun(m).size() == 3);
+      Eigen::Vector3d __x = fun(m);
+      return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2));
+    };
+
+    DYNO_CHECK_EQ(w.size(), 2, AT);
+    __Space space(double(w(0)), double(w(1)));
+
+    out = new NearestNeighborsNigh<_T, __Space>(space, data_to_key);
+  } else {
+
+    std::cout << "Warning: State space with cost!" << std::endl;
+    auto data_to_key = [robot, fun](_T const &m) {
+      Eigen::Vector3d __x = fun(m);
+      double c = m->get_cost();
+      using Vector1d = Eigen::Matrix<double, 1, 1>;
+      return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2), Vector1d(c));
+    };
+
+    DYNO_CHECK_EQ(w.size(), 2, AT);
+    __SpaceWithCost space(double(w(0)), double(w(1)), cost_scale);
+
+    out = new NearestNeighborsNigh<_T, __SpaceWithCost>(space, data_to_key);
+  }
+
   CHECK(out, AT);
   return out;
 }
@@ -689,7 +719,34 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
     DYNO_CHECK_EQ(w.size(), 3, AT);
     __SpaceCar1 space(w(0), w(1), w(2));
     out = new NearestNeighborsNigh<_T, __SpaceCar1>(space, data_to_key);
-  }
+  } else if (startsWith(name, "differential_drive")) {
+
+    if (cost_scale < 0) {
+      auto data_to_key = [robot, fun, reverse_search](_T const &m) {
+        Eigen::Vector3d __x =
+            fun(m, reverse_search, robot->translation_invariance);
+        return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __Space space(double(w(0)), double(w(1)));
+
+      out = new NearestNeighborsNigh<_T, __Space>(space, data_to_key);
+    } else {
+      std::cout << "Warning: State space with cost!" << std::endl;
+      auto data_to_key = [robot, fun, reverse_search](_T const &m) {
+        Eigen::Vector3d __x =
+            fun(m, reverse_search, robot->translation_invariance);
+        double c = m->get_cost();
+        using Vector1d = Eigen::Matrix<double, 1, 1>;
+        return std::tuple(Eigen::Vector2d(__x.head(2)), __x(2), Vector1d(c));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __SpaceWithCost space(double(w(0)), double(w(1)), cost_scale);
+
+      out = new NearestNeighborsNigh<_T, __SpaceWithCost>(space, data_to_key);
+    }
 
   CHECK(out, AT);
   return out;
