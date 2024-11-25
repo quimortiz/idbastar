@@ -107,4 +107,17 @@ int lowLevelfocalHeuristicSingleState(
     std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
     bool run_focal_heuristic = false);
 
+// not clear for the reverse search, for now valid for forward search for now
+bool check_lazy_trajectory_heterogeneous(
+    std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
+    const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
+    std::vector<std::string> &robot_types, LazyTraj &lazy_traj,
+    dynobench::Model_robot &robot, size_t &current_robot_idx,
+    const Eigen::Ref<const Eigen::VectorXd> &goal, Time_benchmark &time_bench,
+    dynobench::TrajWrapper &tmp_traj,
+    const std::vector<Constraint> &constraints, const float best_node_gscore,
+    float delta, Eigen::Ref<Eigen::VectorXd> aux_last_state,
+    std::function<bool(Eigen::Ref<Eigen::VectorXd>)> *check_state = nullptr,
+    int *num_valid_states = nullptr, bool forward = true);
+
 } // namespace dynoplan
