@@ -619,7 +619,7 @@ void tdbastar_epsilon(
     std::vector<fcl::CollisionObjectd *> &robot_objs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result,
-    float w, bool run_focal_heuristic) {
+    bool heterogeneous, float w, bool run_focal_heuristic) {
 
 #ifdef DBG_PRINTS
   std::cout << "*** options_tdbastar ***" << std::endl;
@@ -1016,7 +1016,6 @@ void tdbastar_epsilon(
       int num_valid_states = -1;
       traj_wrapper.set_size(lazy_traj.motion->traj.states.size());
 
-      bool heterogeneous = true; // TO DO, pass as some flag
       bool motion_valid =
           (heterogeneous && !reverse_search)
               ? check_lazy_trajectory_heterogeneous(
