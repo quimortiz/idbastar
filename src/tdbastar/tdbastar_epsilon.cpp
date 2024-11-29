@@ -186,9 +186,11 @@ int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
+    std::vector<std::string> &robot_types,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
     const float current_gScore,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal) {
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal,
+    bool heterogeneous) {
 
   int numConflicts = 0;
   // other motion/robot
@@ -196,6 +198,8 @@ int lowLevelfocalHeuristicSequential(
   std::vector<fcl::Transform3d> tmp_ts1(1);
   std::vector<fcl::Transform3d> tmp_ts2(1);
   size_t max_t = 0;
+  size_t robot_idx;
+  double max_f = 0.0981; // in Newton
 
   if (reachesGoal) {
     for (const auto &sol : solution) {
@@ -222,8 +226,7 @@ int lowLevelfocalHeuristicSequential(
       robot_objs[current_robot_idx]->setTranslation(transform.translation());
       robot_objs[current_robot_idx]->setRotation(transform.rotation());
       robot_objs[current_robot_idx]->computeAABB();
-
-      size_t robot_idx = 0;
+      robot_idx = 0;
       for (auto &sol : solution) {
         if (robot_idx != current_robot_idx && !sol.trajectory.states.empty()) {
           if (t >= sol.trajectory.states.size()) {
@@ -242,9 +245,31 @@ int lowLevelfocalHeuristicSequential(
           fcl::CollisionResult<double> result;
           fcl::collide(robot_objs[current_robot_idx], robot_objs[robot_idx],
                        request, result);
-          if (result.isCollision()) {
+          if (!result.isCollision() &&
+              heterogeneous) { // residual force should be checked if there is
+                               // no collision
+            auto dist = state1 - state2; // only pos, velocity
+            if (abs(dist(0)) < 0.2 && abs(dist(1)) < 0.2 &&
+                abs(dist(2)) < 1.5) {
+              float input[6] = {
+                  static_cast<float>(dist(0)), static_cast<float>(dist(1)),
+                  static_cast<float>(dist(2)), static_cast<float>(dist(3)),
+                  static_cast<float>(dist(4)), static_cast<float>(dist(5))};
+              nn_reset();
+              const auto nnType =
+                  (robot_types[robot_idx] == "integrator2_3d_large_v0")
+                      ? NN_ROBOT_LARGE
+                      : NN_ROBOT_SMALL;
+
+              nn_add_neighbor(input, nnType);           // self-robot type?
+              const float *rhoOutput = nn_eval(nnType); // in grams
+              float rho = rhoOutput[0] / 1000 * 9.81;   // in Newtons
+              if (rho > max_f || rho < -max_f)
+                ++numConflicts; // count as collision, check for each pair
+                                // separately
+            }
+          } else
             ++numConflicts;
-          }
         }
         ++robot_idx;
       }
@@ -563,9 +588,9 @@ bool check_lazy_trajectory_heterogeneous(
 
           nn_add_neighbor(input, nnType);
           const float *rhoOutput = nn_eval(nnType); // in grams
-          // std::cout << "t,x,y,z distance: " << t << ", " << abs(dist(0)) <<
-          // ", " << abs(dist(1)) << ", " << abs(dist(2)) << std::endl;
-          // std::cout << "rhoOutput [F]: " << rhoOutput[0] << std::endl;
+          std::cout << "t,x,y,z distance: " << t << ", " << abs(dist(0)) << ", "
+                    << abs(dist(1)) << ", " << abs(dist(2)) << std::endl;
+          std::cout << "rhoOutput [F]: " << rhoOutput[0] << std::endl;
           rho += rhoOutput[0] / 1000 * 9.81; // in Newtons
         }
       }
@@ -1016,18 +1041,10 @@ void tdbastar_epsilon(
       int num_valid_states = -1;
       traj_wrapper.set_size(lazy_traj.motion->traj.states.size());
 
-      bool motion_valid =
-          (heterogeneous && !reverse_search)
-              ? check_lazy_trajectory_heterogeneous(
-                    solution, all_robots, problem.robotTypes, lazy_traj, *robot,
-                    robot_id, problem.goals[robot_id], time_bench, traj_wrapper,
-                    constraints, best_node->gScore, options_tdbastar.delta,
-                    aux_last_state, &ff, &num_valid_states, !reverse_search)
-              : check_lazy_trajectory(
-                    lazy_traj, *robot, problem.goals[robot_id], time_bench,
-                    traj_wrapper, constraints, best_node->gScore,
-                    options_tdbastar.delta, aux_last_state, &ff,
-                    &num_valid_states, !reverse_search);
+      bool motion_valid = check_lazy_trajectory(
+          lazy_traj, *robot, problem.goals[robot_id], time_bench, traj_wrapper,
+          constraints, best_node->gScore, options_tdbastar.delta,
+          aux_last_state, &ff, &num_valid_states, !reverse_search);
 
       if (!motion_valid)
         continue;
@@ -1057,11 +1074,11 @@ void tdbastar_epsilon(
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
 
-      focalHeuristic =
-          best_node_bestFocalHeuristic +
-          lowLevelfocalHeuristicSequential(
-              solution, time_bench, all_robots, traj_wrapper, robot_id,
-              best_node->gScore, robot_objs, reachesGoal);
+      focalHeuristic = best_node_bestFocalHeuristic +
+                       lowLevelfocalHeuristicSequential(
+                           solution, time_bench, all_robots, problem.robotTypes,
+                           traj_wrapper, robot_id, best_node->gScore,
+                           robot_objs, reachesGoal, heterogeneous);
 
       // focalHeuristic = best_node_bestFocalHeuristic +
       //  lowLevelfocalHeuristicState(
