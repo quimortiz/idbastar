@@ -200,7 +200,8 @@ int lowLevelfocalHeuristicSequential(
   size_t max_t = 0;
   size_t robot_idx;
   double max_f = 0.0981; // in Newton
-
+  float rho = 0;
+  bool check_rho = false;
   if (reachesGoal) {
     for (const auto &sol : solution) {
       if (!sol.trajectory.states.empty())
@@ -214,6 +215,8 @@ int lowLevelfocalHeuristicSequential(
       std::max(max_t, primitive_starting_index + current_tmp_traj.get_size());
   time_bench.time_collision_heuristic += timed_fun_void([&] {
     for (size_t t = primitive_starting_index; t <= max_t; t++) {
+      rho = 0; // zero for each timestamp
+      check_rho = false;
       if (t - primitive_starting_index >= current_tmp_traj.get_size()) {
         state1 = current_tmp_traj.get_state(current_tmp_traj.get_size() - 1);
       } else {
@@ -248,6 +251,7 @@ int lowLevelfocalHeuristicSequential(
           if (!result.isCollision() &&
               heterogeneous) { // residual force should be checked if there is
                                // no collision
+            check_rho = true;
             auto dist = state1 - state2; // only pos, velocity
             if (abs(dist(0)) < 0.2 && abs(dist(1)) < 0.2 &&
                 abs(dist(2)) < 1.5) {
@@ -263,19 +267,22 @@ int lowLevelfocalHeuristicSequential(
 
               nn_add_neighbor(input, nnType);           // self-robot type?
               const float *rhoOutput = nn_eval(nnType); // in grams
-              float rho = rhoOutput[0] / 1000 * 9.81;   // in Newtons
-              if (rho > max_f || rho < -max_f)
-                ++numConflicts; // count as collision, check for each pair
-                                // separately
+              rho += rhoOutput[0] / 1000 * 9.81;        // in Newtons
             }
-          } else
+          } else if (result.isCollision()) {
             ++numConflicts;
-        }
+            check_rho = false; // if collision with any of robots, then no need
+                               // for residual checking for this timestamp
+          }
+        } // if robot idx != other robot idx
         ++robot_idx;
+      }
+      // after checking with all neighbors
+      if (check_rho && (rho < -max_f || rho > max_f)) {
+        ++numConflicts;
       }
     }
   });
-
   return numConflicts;
 }
 
