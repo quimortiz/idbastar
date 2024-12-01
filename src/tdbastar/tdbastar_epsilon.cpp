@@ -215,8 +215,9 @@ int lowLevelfocalHeuristicSequential(
       std::max(max_t, primitive_starting_index + current_tmp_traj.get_size());
   time_bench.time_collision_heuristic += timed_fun_void([&] {
     for (size_t t = primitive_starting_index; t <= max_t; t++) {
-      rho = 0; // zero for each timestamp
-      check_rho = false;
+      rho = 0;          // zero for each timestamp
+      check_rho = true; // always true, unless there is a collision and no need
+                        // to check for rho (collision OR fa)
       if (t - primitive_starting_index >= current_tmp_traj.get_size()) {
         state1 = current_tmp_traj.get_state(current_tmp_traj.get_size() - 1);
       } else {
@@ -251,7 +252,7 @@ int lowLevelfocalHeuristicSequential(
           if (!result.isCollision() &&
               heterogeneous) { // residual force should be checked if there is
                                // no collision
-            check_rho = true;
+            // check_rho = true;
             auto dist = state1 - state2; // only pos, velocity
             if (abs(dist(0)) < 0.2 && abs(dist(1)) < 0.2 &&
                 abs(dist(2)) < 1.5) {
@@ -265,9 +266,7 @@ int lowLevelfocalHeuristicSequential(
                       ? NN_ROBOT_LARGE
                       : NN_ROBOT_SMALL;
 
-              nn_add_neighbor(input, nnType);           // self-robot type?
-              const float *rhoOutput = nn_eval(nnType); // in grams
-              rho += rhoOutput[0] / 1000 * 9.81;        // in Newtons
+              nn_add_neighbor(input, nnType);
             }
           } else if (result.isCollision()) {
             ++numConflicts;
@@ -278,8 +277,15 @@ int lowLevelfocalHeuristicSequential(
         ++robot_idx;
       }
       // after checking with all neighbors
-      if (check_rho && (rho < -max_f || rho > max_f)) {
-        ++numConflicts;
+      if (check_rho) {
+        const auto selfType =
+            (robot_types[current_robot_idx] == "integrator2_3d_large_v0")
+                ? NN_ROBOT_LARGE
+                : NN_ROBOT_SMALL;
+        const float *rhoOutput = nn_eval(selfType); // in grams
+        rho = rhoOutput[0] / 1000 * 9.81;           // in Newtons
+        if (rho < -max_f || rho > max_f)
+          ++numConflicts;
       }
     }
   });
