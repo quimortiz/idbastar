@@ -38,6 +38,9 @@
 #include "dynoplan/tdbastar/tdbastar.hpp"
 #include "dynoplan/tdbastar/tdbastar_epsilon.hpp"
 
+// nn
+#include "dynobench/nn.h"
+
 #define REBUILT_FOCAL_LIST
 
 namespace dynoplan {
@@ -183,9 +186,11 @@ int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
+    std::vector<std::string> &robot_types,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
     const float current_gScore,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal) {
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal,
+    bool heterogeneous) {
 
   int numConflicts = 0;
   // other motion/robot
@@ -193,7 +198,10 @@ int lowLevelfocalHeuristicSequential(
   std::vector<fcl::Transform3d> tmp_ts1(1);
   std::vector<fcl::Transform3d> tmp_ts2(1);
   size_t max_t = 0;
-
+  size_t robot_idx;
+  double max_f = 0.0981; // in Newton
+  float rho = 0;
+  bool check_rho = false;
   if (reachesGoal) {
     for (const auto &sol : solution) {
       if (!sol.trajectory.states.empty())
@@ -207,6 +215,9 @@ int lowLevelfocalHeuristicSequential(
       std::max(max_t, primitive_starting_index + current_tmp_traj.get_size());
   time_bench.time_collision_heuristic += timed_fun_void([&] {
     for (size_t t = primitive_starting_index; t <= max_t; t++) {
+      rho = 0;          // zero for each timestamp
+      check_rho = true; // always true, unless there is a collision and no need
+                        // to check for rho (collision OR fa)
       if (t - primitive_starting_index >= current_tmp_traj.get_size()) {
         state1 = current_tmp_traj.get_state(current_tmp_traj.get_size() - 1);
       } else {
@@ -219,8 +230,7 @@ int lowLevelfocalHeuristicSequential(
       robot_objs[current_robot_idx]->setTranslation(transform.translation());
       robot_objs[current_robot_idx]->setRotation(transform.rotation());
       robot_objs[current_robot_idx]->computeAABB();
-
-      size_t robot_idx = 0;
+      robot_idx = 0;
       for (auto &sol : solution) {
         if (robot_idx != current_robot_idx && !sol.trajectory.states.empty()) {
           if (t >= sol.trajectory.states.size()) {
@@ -239,15 +249,46 @@ int lowLevelfocalHeuristicSequential(
           fcl::CollisionResult<double> result;
           fcl::collide(robot_objs[current_robot_idx], robot_objs[robot_idx],
                        request, result);
-          if (result.isCollision()) {
+          if (!result.isCollision() &&
+              heterogeneous) { // residual force should be checked if there is
+                               // no collision
+            // check_rho = true;
+            auto dist = state1 - state2; // only pos, velocity
+            if (abs(dist(0)) < 0.2 && abs(dist(1)) < 0.2 &&
+                abs(dist(2)) < 1.5) {
+              float input[6] = {
+                  static_cast<float>(dist(0)), static_cast<float>(dist(1)),
+                  static_cast<float>(dist(2)), static_cast<float>(dist(3)),
+                  static_cast<float>(dist(4)), static_cast<float>(dist(5))};
+              nn_reset();
+              const auto nnType =
+                  (robot_types[robot_idx] == "integrator2_3d_large_v0")
+                      ? NN_ROBOT_LARGE
+                      : NN_ROBOT_SMALL;
+
+              nn_add_neighbor(input, nnType);
+            }
+          } else if (result.isCollision()) {
             ++numConflicts;
+            check_rho = false; // if collision with any of robots, then no need
+                               // for residual checking for this timestamp
           }
-        }
+        } // if robot idx != other robot idx
         ++robot_idx;
+      }
+      // after checking with all neighbors
+      if (check_rho) {
+        const auto selfType =
+            (robot_types[current_robot_idx] == "integrator2_3d_large_v0")
+                ? NN_ROBOT_LARGE
+                : NN_ROBOT_SMALL;
+        const float *rhoOutput = nn_eval(selfType); // in grams
+        rho = rhoOutput[0] / 1000 * 9.81;           // in Newtons
+        if (rho < -max_f || rho > max_f)
+          ++numConflicts;
       }
     }
   });
-
   return numConflicts;
 }
 
@@ -429,7 +470,7 @@ void tdbastar_epsilon(
     std::vector<fcl::CollisionObjectd *> &robot_objs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result,
-    float w, bool run_focal_heuristic) {
+    bool heterogeneous, float w, bool run_focal_heuristic) {
 
 #ifdef DBG_PRINTS
   std::cout << "*** options_tdbastar ***" << std::endl;
@@ -825,13 +866,14 @@ void tdbastar_epsilon(
 
       int num_valid_states = -1;
       traj_wrapper.set_size(lazy_traj.motion->traj.states.size());
+
       bool motion_valid = check_lazy_trajectory(
           lazy_traj, *robot, problem.goals[robot_id], time_bench, traj_wrapper,
           constraints, best_node->gScore, options_tdbastar.delta,
           aux_last_state, &ff, &num_valid_states, !reverse_search);
-      if (!motion_valid) {
+
+      if (!motion_valid)
         continue;
-      }
 
       int chosen_index = -1;
       check_goal(*robot, tmp_node->state_eig, problem.goals[robot_id],
@@ -858,11 +900,11 @@ void tdbastar_epsilon(
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
 
-      focalHeuristic =
-          best_node_bestFocalHeuristic +
-          lowLevelfocalHeuristicSequential(
-              solution, time_bench, all_robots, traj_wrapper, robot_id,
-              best_node->gScore, robot_objs, reachesGoal);
+      focalHeuristic = best_node_bestFocalHeuristic +
+                       lowLevelfocalHeuristicSequential(
+                           solution, time_bench, all_robots, problem.robotTypes,
+                           traj_wrapper, robot_id, best_node->gScore,
+                           robot_objs, reachesGoal, heterogeneous);
 
       // focalHeuristic = best_node_bestFocalHeuristic +
       //  lowLevelfocalHeuristicState(

@@ -61,7 +61,8 @@ void tdbastar_epsilon(
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =
         nullptr,
-    float w = 0.0, bool run_focal_heuristic = false);
+    bool heterogeneous = false, float w = 0.0,
+    bool run_focal_heuristic = false);
 
 // R1 with (R2,R3,R4), R2 with (R3,R4) and R3 with R4, state-by-state
 // not for car with trailer
@@ -77,14 +78,15 @@ int highLevelfocalHeuristicState(
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
     std::vector<fcl::CollisionObjectd *> &robot_objs);
 
-// computationally less efficient version of the low-level focal heuristic
 int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
+    std::vector<std::string> &robot_types,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
     const float current_gScore,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false);
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
+    bool heterogeneous = false);
 
 // less accurate focal heuristic, but faster
 int lowLevelfocalHeuristicState(
