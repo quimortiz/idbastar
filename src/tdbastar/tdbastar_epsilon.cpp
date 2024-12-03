@@ -142,7 +142,6 @@ int highLevelfocalHeuristicState(
   Eigen::VectorXd state, state1, state2;
   std::vector<Eigen::VectorXd> states;
   size_t max_t = 0;
-  float rho;
   double max_f = 0.0981; // in Newton
   for (const auto &sol : solution) {
     max_t = std::max(max_t, sol.trajectory.states.size() - 1);
@@ -183,9 +182,9 @@ int highLevelfocalHeuristicState(
       ++numConflicts;
     } else if (!collision_data.result.isCollision() &&
                heterogeneous) { // no collision happened
-      rho = 0;
       for (size_t i = 0; i < all_robots.size(); ++i) {
         state1 = states.at(i);
+        nn_reset();
         for (size_t j = 0; j < all_robots.size(); ++j) {
           if (i != j) { // fa for each robot coming from neighbors
             state2 = states.at(j);
@@ -196,7 +195,6 @@ int highLevelfocalHeuristicState(
                   static_cast<float>(dist(0)), static_cast<float>(dist(1)),
                   static_cast<float>(dist(2)), static_cast<float>(dist(3)),
                   static_cast<float>(dist(4)), static_cast<float>(dist(5))};
-              nn_reset();
               const auto nnType = (robot_types[j] == "integrator2_3d_large_v0")
                                       ? NN_ROBOT_LARGE
                                       : NN_ROBOT_SMALL;
@@ -210,7 +208,7 @@ int highLevelfocalHeuristicState(
                                   ? NN_ROBOT_LARGE
                                   : NN_ROBOT_SMALL;
         const float *rhoOutput = nn_eval(selfType); // in grams
-        rho = rhoOutput[0] / 1000 * 9.81;           // in Newtons
+        float rho = rhoOutput[0] / 1000 * 9.81;     // in Newtons
         if (rho < -max_f || rho > max_f)
           ++numConflicts;
       }
@@ -238,7 +236,6 @@ int lowLevelfocalHeuristicSequential(
   std::vector<fcl::Transform3d> tmp_ts2(1);
   size_t max_t = 0;
   size_t robot_idx;
-  float rho = 0;
   double max_f = 0.0981; // in Newton
   bool check_rho = false;
   if (reachesGoal) {
@@ -254,7 +251,6 @@ int lowLevelfocalHeuristicSequential(
       std::max(max_t, primitive_starting_index + current_tmp_traj.get_size());
   time_bench.time_collision_heuristic += timed_fun_void([&] {
     for (size_t t = primitive_starting_index; t <= max_t; t++) {
-      rho = 0;          // zero for each timestamp
       check_rho = true; // always true, unless there is a collision and no need
                         // to check for rho (collision OR fa)
       if (t - primitive_starting_index >= current_tmp_traj.get_size()) {
@@ -270,6 +266,7 @@ int lowLevelfocalHeuristicSequential(
       robot_objs[current_robot_idx]->setRotation(transform.rotation());
       robot_objs[current_robot_idx]->computeAABB();
       robot_idx = 0;
+      nn_reset();
       for (auto &sol : solution) {
         if (robot_idx != current_robot_idx && !sol.trajectory.states.empty()) {
           if (t >= sol.trajectory.states.size()) {
@@ -299,7 +296,6 @@ int lowLevelfocalHeuristicSequential(
                   static_cast<float>(dist(0)), static_cast<float>(dist(1)),
                   static_cast<float>(dist(2)), static_cast<float>(dist(3)),
                   static_cast<float>(dist(4)), static_cast<float>(dist(5))};
-              nn_reset();
               const auto nnType =
                   (robot_types[robot_idx] == "integrator2_3d_large_v0")
                       ? NN_ROBOT_LARGE
@@ -322,7 +318,7 @@ int lowLevelfocalHeuristicSequential(
                 ? NN_ROBOT_LARGE
                 : NN_ROBOT_SMALL;
         const float *rhoOutput = nn_eval(selfType); // in grams
-        rho = rhoOutput[0] / 1000 * 9.81;           // in Newtons
+        float rho = rhoOutput[0] / 1000 * 9.81;     // in Newtons
         if (rho < -max_f || rho > max_f)
           ++numConflicts;
       }
