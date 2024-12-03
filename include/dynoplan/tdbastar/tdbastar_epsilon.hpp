@@ -75,8 +75,10 @@ int highLevelfocalHeuristicStatePrecise(
 int highLevelfocalHeuristicState(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
+    std::vector<std::string> &robot_types,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
-    std::vector<fcl::CollisionObjectd *> &robot_objs);
+    std::vector<fcl::CollisionObjectd *> &robot_objs,
+    bool heterogeneous = false);
 
 int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
