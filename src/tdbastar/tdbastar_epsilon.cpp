@@ -514,6 +514,13 @@ void tdbastar_epsilon(
 #endif
   std::cout << "*** Running tdbA*-epsilon for robot " << robot_id << " ***"
             << std::endl;
+
+  for (const auto &constraint : constraints) {
+    std::cout << "constraint at time: " << constraint.time << " ";
+    std::cout << constraint.constrained_state.format(dynobench::FMT)
+              << std::endl;
+  }
+
   std::shared_ptr<dynobench::Model_robot> robot = dynobench::robot_factory(
       (problem.models_base_path + problem.robotTypes[robot_id] + ".yaml")
           .c_str(),
