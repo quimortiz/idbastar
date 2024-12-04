@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
   bool sum_robots_cost = true;
   desc.add_options()("help", "produce help message")(
       "env,e", po::value<std::string>(&envFile)->required())(
-      "init,i", po::value<std::string>(&initFile)->required())(
+      // "init,i", po::value<std::string>(&initFile)->required())(
       "discrete,d", po::value<std::string>(&discreteSearchFile)->required())(
       "out,o", po::value<std::string>(&outFile)->required())(
       "base,b", po::value<std::string>(&dynobench_base)->required());
@@ -164,18 +164,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  MultiRobotTrajectory parallel_multirobot_sol;
-  parallel_multirobot_sol.read_from_yaml(initFile.c_str());
+  // MultiRobotTrajectory parallel_multirobot_sol;
+  // parallel_multirobot_sol.read_from_yaml(initFile.c_str());
   MultiRobotTrajectory discrete_search_sol;
   discrete_search_sol.read_from_yaml(discreteSearchFile.c_str());
-  MultiRobotTrajectory multi_out = parallel_multirobot_sol;
+  MultiRobotTrajectory multi_out =
+      discrete_search_sol; // parallel_multirobot_sol;
   // if the cluster is known then run only this
-  std::unordered_set<size_t> cluster{3, 5};
-  std::string env_file_id = "/home/akmarak-laptop/IMRC/db-CBS/results/"
-                            "static_obs/drone12c/tmp_envFile.yaml";
+  std::unordered_set<size_t> cluster{0, 1, 2, 3};
+  // std::string env_file_id =
+  // "/home/akmarak-laptop/IMRC/db-CBS/example/gen_p10_n4_1_unicycle_sphere.yaml";
   // test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
   bool feasible =
-      execute_optimizationMetaRobot(env_file_id, discrete_search_sol, multi_out,
+      execute_optimizationMetaRobot(envFile, discrete_search_sol, multi_out,
                                     dynobench_base, cluster, sum_robots_cost);
   if (feasible)
     multi_out.to_yaml_format(outFile.c_str());
