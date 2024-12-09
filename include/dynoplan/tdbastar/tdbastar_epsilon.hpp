@@ -51,7 +51,8 @@ typedef typename boost::heap::d_ary_heap<
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_dbastar,
     dynobench::Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, bool reverse_search,
+    Out_info_tdb &out_info_tdb, size_t &robot_id,
+    std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     std::map<std::string, std::vector<Motion>> &robot_motions,
@@ -61,7 +62,7 @@ void tdbastar_epsilon(
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =
         nullptr,
-    bool heterogeneous = false, float w = 0.0,
+    bool residual_force = false, float w = 0.0,
     bool run_focal_heuristic = false);
 
 // R1 with (R2,R3,R4), R2 with (R3,R4) and R3 with R4, state-by-state
@@ -86,6 +87,7 @@ int lowLevelfocalHeuristicSequential(
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     std::vector<std::string> &robot_types,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
+    std::map<size_t, std::vector<size_t>> &robot_obj_sets,
     const float current_gScore,
     std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal = false,
     bool heterogeneous = false);
