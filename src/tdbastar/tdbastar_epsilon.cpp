@@ -135,7 +135,7 @@ int highLevelfocalHeuristicState(
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     std::vector<std::string> &robot_types,
     std::shared_ptr<fcl::BroadPhaseCollisionManagerd> col_mng_robots,
-    std::vector<fcl::CollisionObjectd *> &robot_objs, bool heterogeneous) {
+    std::vector<fcl::CollisionObjectd *> &robot_objs, bool residual_force) {
 
   size_t max_t1 = 0;
   int numConflicts = 0;
@@ -181,7 +181,7 @@ int highLevelfocalHeuristicState(
     if (collision_data.result.isCollision()) {
       ++numConflicts;
     } else if (!collision_data.result.isCollision() &&
-               heterogeneous) { // no collision happened
+               residual_force) { // no collision happened
       for (size_t i = 0; i < all_robots.size(); ++i) {
         state1 = states.at(i);
         nn_reset();
@@ -217,17 +217,17 @@ int highLevelfocalHeuristicState(
   return numConflicts;
 }
 
-// pair-wise checking, doesn't work with car with trailer
-// for simplicity I assume robot_objs.size() = robot number. TO DO
+// pair-wise checking
 int lowLevelfocalHeuristicSequential(
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     Time_benchmark &time_bench,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
     std::vector<std::string> &robot_types,
     dynobench::TrajWrapper &current_tmp_traj, size_t &current_robot_idx,
+    std::map<size_t, std::vector<size_t>> &robot_obj_sets,
     const float current_gScore,
     std::vector<fcl::CollisionObjectd *> &robot_objs, bool reachesGoal,
-    bool heterogeneous) {
+    bool residual_force) {
 
   int numConflicts = 0;
   // other motion/robot
@@ -244,7 +244,8 @@ int lowLevelfocalHeuristicSequential(
         max_t = std::max(max_t, sol.trajectory.states.size() - 1);
     }
   }
-
+  all_robots[current_robot_idx]->name == "car_with_trailers" ? tmp_ts1.resize(2)
+                                                             : void();
   size_t primitive_starting_index =
       std::lround(current_gScore / all_robots[current_robot_idx]->ref_dt);
   max_t =
@@ -258,13 +259,16 @@ int lowLevelfocalHeuristicSequential(
       } else {
         state1 = current_tmp_traj.get_state(t - primitive_starting_index);
       }
-
       all_robots[current_robot_idx]->transformation_collision_geometries(
           state1, tmp_ts1);
-      fcl::Transform3d &transform = tmp_ts1[0]; // no trailer
-      robot_objs[current_robot_idx]->setTranslation(transform.translation());
-      robot_objs[current_robot_idx]->setRotation(transform.rotation());
-      robot_objs[current_robot_idx]->computeAABB();
+      for (size_t i = 0; i < tmp_ts1.size(); i++) {
+        fcl::Transform3d &transform = tmp_ts1[i];
+        robot_objs[robot_obj_sets[current_robot_idx].at(i)]->setTranslation(
+            transform.translation());
+        robot_objs[robot_obj_sets[current_robot_idx].at(i)]->setRotation(
+            transform.rotation());
+        robot_objs[robot_obj_sets[current_robot_idx].at(i)]->computeAABB();
+      }
       robot_idx = 0;
       nn_reset();
       for (auto &sol : solution) {
@@ -274,20 +278,36 @@ int lowLevelfocalHeuristicSequential(
           } else {
             state2 = sol.trajectory.states.at(t);
           }
+          all_robots[robot_idx]->name == "car_with_trailers"
+              ? tmp_ts2.resize(2)
+              : tmp_ts2.resize(1);
           all_robots[robot_idx]->transformation_collision_geometries(state2,
                                                                      tmp_ts2);
-          fcl::Transform3d &transform = tmp_ts2[0]; // no trailer
-          robot_objs[robot_idx]->setTranslation(transform.translation());
-          robot_objs[robot_idx]->setRotation(transform.rotation());
-          robot_objs[robot_idx]->computeAABB();
-          // check for collision
-          fcl::CollisionRequest<double> request;
-          fcl::CollisionResult<double> result;
-          fcl::collide(robot_objs[current_robot_idx], robot_objs[robot_idx],
-                       request, result);
-          if (!result.isCollision() &&
-              heterogeneous) { // residual force should be checked if there is
-                               // no collision
+          for (size_t j = 0; j < tmp_ts2.size(); j++) {
+            fcl::Transform3d &transform = tmp_ts2[j];
+            robot_objs[robot_obj_sets[robot_idx].at(j)]->setTranslation(
+                transform.translation());
+            robot_objs[robot_obj_sets[robot_idx].at(j)]->setRotation(
+                transform.rotation());
+            robot_objs[robot_obj_sets[robot_idx].at(j)]->computeAABB();
+            for (size_t k = 0; k < tmp_ts1.size(); k++) {
+              // check for collision
+              fcl::CollisionRequest<double> request;
+              fcl::CollisionResult<double> result;
+              fcl::collide(robot_objs[robot_obj_sets[robot_idx].at(j)],
+                           robot_objs[robot_obj_sets[current_robot_idx].at(k)],
+                           request, result);
+              if (result.isCollision()) {
+                ++numConflicts;
+                check_rho =
+                    false; // if collision with any of robots, then no need
+                           // for residual checking for this timestamp
+              }
+            }
+          }
+
+          if (check_rho && residual_force) { // residual force should be checked
+                                             // if there is no collision
             // check_rho = true;
             auto dist = state1 - state2; // only pos, velocity
             if (abs(dist(0)) < 0.2 && abs(dist(1)) < 0.2 &&
@@ -303,10 +323,6 @@ int lowLevelfocalHeuristicSequential(
 
               nn_add_neighbor(input, nnType);
             }
-          } else if (result.isCollision()) {
-            ++numConflicts;
-            check_rho = false; // if collision with any of robots, then no need
-                               // for residual checking for this timestamp
           }
         } // if robot idx != other robot idx
         ++robot_idx;
@@ -496,7 +512,8 @@ int lowLevelfocalHeuristicSingleState(
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_tdbastar,
     Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, bool reverse_search,
+    Out_info_tdb &out_info_tdb, size_t &robot_id,
+    std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     std::map<std::string, std::vector<Motion>> &robot_motions,
@@ -505,7 +522,7 @@ void tdbastar_epsilon(
     std::vector<fcl::CollisionObjectd *> &robot_objs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result,
-    bool heterogeneous, float w, bool run_focal_heuristic) {
+    bool residual_force, float w, bool run_focal_heuristic) {
 
 #ifdef DBG_PRINTS
   std::cout << "*** options_tdbastar ***" << std::endl;
@@ -514,6 +531,12 @@ void tdbastar_epsilon(
 #endif
   std::cout << "*** Running tdbA*-epsilon for robot " << robot_id << " ***"
             << std::endl;
+  for (const auto &constraint : constraints) {
+    std::cout << "constraint at time: " << constraint.time << " ";
+    std::cout << constraint.constrained_state.format(dynobench::FMT)
+              << std::endl;
+  }
+
   std::shared_ptr<dynobench::Model_robot> robot = dynobench::robot_factory(
       (problem.models_base_path + problem.robotTypes[robot_id] + ".yaml")
           .c_str(),
@@ -935,11 +958,12 @@ void tdbastar_epsilon(
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
 
-      focalHeuristic = best_node_bestFocalHeuristic +
-                       lowLevelfocalHeuristicSequential(
-                           solution, time_bench, all_robots, problem.robotTypes,
-                           traj_wrapper, robot_id, best_node->gScore,
-                           robot_objs, reachesGoal, heterogeneous);
+      focalHeuristic =
+          best_node_bestFocalHeuristic +
+          lowLevelfocalHeuristicSequential(
+              solution, time_bench, all_robots, problem.robotTypes,
+              traj_wrapper, robot_id, robot_obj_sets, best_node->gScore,
+              robot_objs, reachesGoal, residual_force);
 
       // focalHeuristic = best_node_bestFocalHeuristic +
       //  lowLevelfocalHeuristicState(
