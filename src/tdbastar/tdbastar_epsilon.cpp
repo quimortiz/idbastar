@@ -42,6 +42,7 @@
 #include "dynobench/nn.h"
 
 #define REBUILT_FOCAL_LIST
+// #define DEBUG_REWIRING
 
 namespace dynoplan {
 
@@ -547,6 +548,8 @@ void tdbastar_epsilon(
   int focalHeuristic = 0;
   size_t best_node_bestFocalHeuristicIdx = 0;
   int best_node_bestFocalHeuristic = 0;
+  double best_node_bestFocalHeuristicgScore =
+      0; // the element with the min focal heuristic in arrivals
   // clean
   traj_out.states.clear();
   traj_out.actions.clear();
@@ -833,9 +836,8 @@ void tdbastar_epsilon(
     best_node_bestFocalHeuristicIdx = best_node->best_focal_arrival_idx;
     best_node_bestFocalHeuristic =
         best_node->arrivals.at(best_node_bestFocalHeuristicIdx).focalHeuristic;
-
-    // std::cout << "b/n state: " << best_node->state_eig.format(dynobench::FMT)
-    // << " b/n focalheuristic: " << best_node->bestFocalHeuristic << std::endl;
+    best_node_bestFocalHeuristicgScore =
+        best_node->arrivals.at(best_node_bestFocalHeuristicIdx).gScore;
 
     if (all_print && !reverse_search) {
       std::cout << "/////////////////////" << std::endl;
@@ -885,7 +887,8 @@ void tdbastar_epsilon(
       is_at_goal_no_constraints = true;
       time_bench.time_check_constraints += timed_fun_void([&] {
         for (const auto &constraint : constraints) {
-          if (constraint.time >= best_node->gScore - 1e-6) {
+          if (constraint.time >=
+              best_node_bestFocalHeuristicgScore - 1e-6) { //  best_node->gScore
             bool violation = robot->distance(best_node->state_eig,
                                              constraint.constrained_state) <=
                              options_tdbastar.delta;
@@ -899,14 +902,18 @@ void tdbastar_epsilon(
     }
     if (is_at_goal_no_constraints) {
       std::cout << "FOUND SOLUTION" << std::endl;
-      std::cout << "COST: " << best_node->gScore << " " << best_node->hScore
-                << std::endl;
+      std::cout << "COST: " << best_node_bestFocalHeuristicgScore << " "
+                << best_node->hScore << std::endl;
       std::cout << "x: " << best_node->state_eig.format(FMT) << std::endl;
       std::cout << "d: " << distance_to_goal << std::endl;
       std::cout << "focal: " << best_node_bestFocalHeuristic << std::endl;
       // for extracting the solution, for the consistency in order to use the
       // same from_solution_to_yaml_and_traj function. Otherwise,
-      // current_arrival_idx doesn't point to any useful index/info.
+      // current_arrival_idx doesn't point to the arrivals[i] with the min
+      // focalHeuristic. It points to the last element. It is not useful because
+      // 1) we do update if there is an improvement in a) gscore or b)
+      // focalHeuristic that's why the solution node should be pointing to
+      // best_focal_arrival_idx
       best_node->current_arrival_idx = best_node->best_focal_arrival_idx;
       status = Terminate_status::SOLVED;
       break;
@@ -927,7 +934,8 @@ void tdbastar_epsilon(
 
       bool motion_valid = check_lazy_trajectory(
           lazy_traj, *robot, problem.goals[robot_id], time_bench, traj_wrapper,
-          constraints, best_node->gScore, options_tdbastar.delta,
+          constraints, best_node_bestFocalHeuristicgScore,
+          options_tdbastar.delta, // best_node->gScore
           aux_last_state, &ff, &num_valid_states, !reverse_search);
 
       if (!motion_valid)
@@ -953,7 +961,9 @@ void tdbastar_epsilon(
                                : (traj_wrapper.get_size() - 1) * robot->ref_dt;
 
       assert(cost_motion >= 0);
-      double gScore = best_node->gScore + cost_motion +
+      double gScore = best_node_bestFocalHeuristicgScore +
+                      cost_motion + // best_node->gScore is wrong since we pick
+                                    // up based on the min focalHeuristic value
                       options_tdbastar.cost_delta_factor *
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
@@ -962,17 +972,12 @@ void tdbastar_epsilon(
           best_node_bestFocalHeuristic +
           lowLevelfocalHeuristicSequential(
               solution, time_bench, all_robots, problem.robotTypes,
-              traj_wrapper, robot_id, robot_obj_sets, best_node->gScore,
+              traj_wrapper, robot_id, robot_obj_sets,
+              best_node_bestFocalHeuristicgScore, // best_node->gScore
               robot_objs, reachesGoal, residual_force);
 
-      // focalHeuristic = best_node_bestFocalHeuristic +
-      //  lowLevelfocalHeuristicState(
-      //  solution, time_bench, all_robots, traj_wrapper,
-      //  robot_id, best_node->gScore, col_mng_robots,
-      //  robot_objs, reachesGoal, run_focal_heuristic);
-
       auto tmp_traj = dynobench::trajWrapper_2_Trajectory(traj_wrapper);
-      tmp_traj.cost = best_node->gScore;
+      tmp_traj.cost = best_node_bestFocalHeuristicgScore; // best_node->gScore
       expanded_trajs.push_back(tmp_traj);
       // CHECK if new State is NOVEL
       time_bench.time_nearestNode_search += timed_fun_void([&] {
@@ -1000,11 +1005,12 @@ void tdbastar_epsilon(
             .focalHeuristic = focalHeuristic,
             .came_from = best_node,
             .used_motion = lazy_traj.motion->idx,
-            //  .arrival_idx = best_node->current_arrival_idx
             .arrival_idx =
-                best_node->best_focal_arrival_idx // since the best node is
-                                                  // picked from Focal based on
-                                                  // bestFocalHeuristic.
+                best_node
+                    ->best_focal_arrival_idx // since the best node is
+                                             // picked from Focal based on
+                                             // bestFocalHeuristic, so that's
+                                             // the idx for the parent
         });
         __node->current_arrival_idx = 0;
         // __node->conflicts = tmp_node->conflicts;
@@ -1031,7 +1037,8 @@ void tdbastar_epsilon(
               if (n->reaches_goal) {
                 time_bench.time_check_constraints += timed_fun_void([&] {
                   for (const auto &constraint : constraints) {
-                    if (constraint.time >= best_node->gScore - 1e-6) {
+                    if (constraint.time >= best_node_bestFocalHeuristicgScore -
+                                               1e-6) { // best_node->gScore
                       bool violation =
                           robot->distance(n->state_eig,
                                           constraint.constrained_state) <=
@@ -1061,15 +1068,57 @@ void tdbastar_epsilon(
                     .focalHeuristic = focalHeuristic,
                     .came_from = best_node,
                     .used_motion = lazy_traj.motion->idx,
-                    //  .arrival_idx = best_node->current_arrival_idx
                     .arrival_idx =
                         best_node
                             ->best_focal_arrival_idx // since the best node is
                                                      // picked from Focal based
-                                                     // on bestFocalHeuristic.
+                                                     // on bestFocalHeuristic
                 });
-                ++n->current_arrival_idx;
-
+                ++n->current_arrival_idx; // either better focalHeuristic or
+                                          // gScore, not clear here, just points
+                                          // to the last added element
+// sanity check
+#ifdef DEBUG_REWIRING
+                size_t self_arrival_idx = n->current_arrival_idx;
+                const auto self_arrival = n->arrivals[self_arrival_idx];
+                if (self_arrival.used_motion != static_cast<size_t>(-1) &&
+                    !reverse_search) {
+                  std::shared_ptr<AStarNode> parent = self_arrival.came_from;
+                  size_t parent_arrival_idx = self_arrival.arrival_idx;
+                  const auto parent_arrival =
+                      parent->arrivals[parent_arrival_idx];
+                  float test_g =
+                      parent_arrival.gScore +
+                      motions.at(self_arrival.used_motion).get_cost();
+                  std::cout << "///////// rewiring /////////" << std::endl;
+                  std::cout << "self-gscore, self-arrival-idx: "
+                            << self_arrival.gScore << ", " << self_arrival_idx
+                            << std::endl;
+                  std::cout << "parent-gscore, parent-arrival-idx: "
+                            << parent_arrival.gScore << ", "
+                            << parent_arrival_idx << std::endl;
+                  std::cout << "test g: " << test_g << std::endl;
+                  std::cout << "tentative gscore: " << tentative_g << std::endl;
+                  if (test_g != tentative_g) {
+                    std::cout << "gscore mismatch" << std::endl;
+                    std::cout << "tentative gscore: " << tentative_g
+                              << std::endl;
+                    std::cout << "test gscore: " << test_g << std::endl;
+                    std::cout << "cost motion: " << cost_motion << std::endl;
+                    std::cout << "computed cost: "
+                              << motions.at(self_arrival.used_motion).get_cost()
+                              << std::endl;
+                    std::cout << "parent gscore: " << parent_arrival.gScore
+                              << std::endl; //  parent.gScore
+                    std::cout << "loop over arrivals, gscore, focal heuristic"
+                              << std::endl;
+                    for (auto &arr : parent->arrivals) {
+                      std::cout << arr.gScore << ", " << arr.focalHeuristic
+                                << std::endl;
+                    }
+                  }
+                }
+#endif
                 if (n->is_in_open) {
                   time_bench.time_queue +=
                       timed_fun_void([&] { open.increase(n->handle); });
