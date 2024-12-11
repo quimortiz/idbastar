@@ -404,18 +404,11 @@ bool check_lazy_trajectory(
     }
   });
   time_bench.num_col_motions++;
-  // const double EPSILON = 1e-2;
-  // if(constraints.size()>2 && std::abs(constraints.at(2).constrained_state(0)
-  // - 2.09412) < EPSILON){
-  //   std::cout << "Printing the tmp traj: " << std::endl;
-  //   for (auto tr : tmp_traj.get_states()){
-  //       std::cout << tr.format(dynobench::FMT) << std::endl;
-  //   }
-  //   std::cout << "Finishing printing the tmp traj" << std::endl;
-  //   std::cout << "goal distance: " <<
-  //   robot.distance(tmp_traj.get_state(tmp_traj.get_size() - 1), goal) <<
-  //   std::endl;
+  // std::cout << "Printing the tmp traj: " << std::endl;
+  // for (auto tr : tmp_traj.get_states()){
+  //     std::cout << tr.format(dynobench::FMT) << std::endl;
   // }
+  // std::cout << "Finishing printing the tmp traj" << std::endl;
   bool reachesGoal;
   if (!forward) {
     reachesGoal = robot.distance(tmp_traj.get_state(tmp_traj.get_size() - 1),
@@ -436,30 +429,16 @@ bool check_lazy_trajectory(
       if (time_index >= 0 && time_index < (int)tmp_traj.get_size() - 1) {
         state_to_check = tmp_traj.get_state(time_index);
       }
-      // if(std::abs(constraint.constrained_state(0) - 2.09412) < EPSILON){
-      //   std::cout << "gScore: " << best_node_gScore << std::endl;
-      //   std::cout << "time_offset: " << time_offset << std::endl;
-      //   std::cout << "time_index: " << time_index << std::endl;
-      // }
       if (state_to_check.size() > 0) {
         bool violation = robot.distance(state_to_check,
                                         constraint.constrained_state) <= delta;
         if (violation) {
           motion_valid = false;
-          // if(std::abs(constraint.constrained_state(0) - 2.09412) < EPSILON){
-          //   std::cout << "state_to_check: " <<
-          //   state_to_check.format(dynobench::FMT) << std::endl; std::cout <<
-          //   "constrained state: " <<
-          //   constraint.constrained_state.format(dynobench::FMT) << std::endl;
-          // }
           break;
         }
       }
     }
   });
-  // if(constraints.size()>2 && std::abs(constraints.at(2).constrained_state(0)
-  // - 2.09412) < EPSILON)
-  //   std::cout << "motion valid: " << motion_valid << std::endl;
   return motion_valid;
 };
 
