@@ -513,7 +513,7 @@ int lowLevelfocalHeuristicSingleState(
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_tdbastar,
     Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double &cost_min,
     std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
@@ -1262,7 +1262,7 @@ void tdbastar_epsilon(
     thresholds.goal_tol = options_tdbastar.delta;
     thresholds.traj_tol = options_tdbastar.delta;
     traj_out.update_feasibility(thresholds, false);
-
+    cost_min = std::min(cost_min, traj_out.cost);
     // Sanity check here, that verifies that we obey all constraints
     std::cout << "checking constraints for the final solution " << std::endl;
     time_bench.time_check_constraints += timed_fun_void([&] {
