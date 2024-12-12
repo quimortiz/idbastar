@@ -513,9 +513,9 @@ int lowLevelfocalHeuristicSingleState(
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_tdbastar,
     Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, double &cost_min,
-    std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
-    std::vector<dynobench::Trajectory> &expanded_trajs,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double &upper_bound,
+    double &h, std::map<size_t, std::vector<size_t>> &robot_obj_sets,
+    bool reverse_search, std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     std::map<std::string, std::vector<Motion>> &robot_motions,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
@@ -647,6 +647,9 @@ void tdbastar_epsilon(
 
   auto goal_node = std::make_shared<AStarNode>();
   goal_node->state_eig = problem.goals[robot_id];
+  // heuristic for the upper-bound computation
+  if (h == -1 && !reverse_search)
+    h = start_node->hScore;
   open_t open;
   focal_t focal; // subset of open nodes that are within suboptimality bound
   start_node->handle = open.push(start_node);
@@ -775,7 +778,7 @@ void tdbastar_epsilon(
       size_t tmp_best_focal_arrival_idx = 0;
       for (const auto &arrival : (*iter)->arrivals) {
         double cost = arrival.gScore + (*iter)->hScore; // fScore
-        if (cost <= best_cost * w) {
+        if (cost <= best_cost * w && cost < upper_bound) {
           if (arrival.focalHeuristic < bestFocalHeuristic) {
             bestFocalHeuristic = arrival.focalHeuristic;
             best_focal_arrival_idx = idx;
@@ -829,6 +832,10 @@ void tdbastar_epsilon(
       }
     }
 #endif
+    if (focal.empty()) {
+      std::cout << "EMPTY FOCAL" << std::endl;
+      return;
+    }
     auto best_handle = focal.top(); // based on bestFocalHeuristic
     best_node = *best_handle;
     last_f_score = best_node->fScore;
@@ -1262,7 +1269,6 @@ void tdbastar_epsilon(
     thresholds.goal_tol = options_tdbastar.delta;
     thresholds.traj_tol = options_tdbastar.delta;
     traj_out.update_feasibility(thresholds, false);
-    cost_min = std::min(cost_min, traj_out.cost);
     // Sanity check here, that verifies that we obey all constraints
     std::cout << "checking constraints for the final solution " << std::endl;
     time_bench.time_check_constraints += timed_fun_void([&] {
