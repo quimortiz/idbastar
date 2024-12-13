@@ -404,7 +404,6 @@ bool check_lazy_trajectory(
     }
   });
   time_bench.num_col_motions++;
-  // check with constraints
   // std::cout << "Printing the tmp traj: " << std::endl;
   // for (auto tr : tmp_traj.get_states()){
   //     std::cout << tr.format(dynobench::FMT) << std::endl;
@@ -430,7 +429,6 @@ bool check_lazy_trajectory(
       if (time_index >= 0 && time_index < (int)tmp_traj.get_size() - 1) {
         state_to_check = tmp_traj.get_state(time_index);
       }
-
       if (state_to_check.size() > 0) {
         bool violation = robot.distance(state_to_check,
                                         constraint.constrained_state) <= delta;
@@ -441,7 +439,6 @@ bool check_lazy_trajectory(
       }
     }
   });
-
   return motion_valid;
 };
 
@@ -986,7 +983,7 @@ void tdbastar(
       float dist = robot->distance(traj_out.states.at(time_index),
                                    constraint.constrained_state);
       if (dist <= options_tdbastar.delta) {
-        std::cout << "VIOLATION in solution  " << dist << " "
+        std::cout << "VIOLATION in solution, distance:  " << dist << " "
                   << "time index in solution: " << time_index << " "
                   << std::endl;
         std::cout << traj_out.states.at(time_index).format(dynobench::FMT)
