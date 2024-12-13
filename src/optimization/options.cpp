@@ -100,6 +100,11 @@ void Options_trajopt::read_from_yaml(YAML::Node &node) {
 void Options_trajopt::print(std::ostream &out, const std::string &be,
                             const std::string &af) const {
 
+  out << be << STR(time_ref, af) << std::endl;
+  out << be << STR(time_weight, af) << std::endl;
+  out << be << STR(check_with_finite_diff, af) << std::endl;
+
+
   out << be << STR(name, af) << std::endl;
   out << be << STR(shift_repeat, af) << std::endl;
   out << be << STR(soft_control_bounds, af) << std::endl;
