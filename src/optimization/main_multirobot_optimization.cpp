@@ -174,8 +174,9 @@ int main(int argc, char *argv[]) {
   std::string env_file_id = "/home/akmarak-laptop/IMRC/db-CBS/results/"
                             "static_obs/drone12c/tmp_envFile.yaml";
   // test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
+  dynobench::Problem problem(env_file_id);
   bool feasible =
-      execute_optimizationMetaRobot(env_file_id, discrete_search_sol, multi_out,
+      execute_optimizationMetaRobot(problem, discrete_search_sol, multi_out,
                                     dynobench_base, cluster, sum_robots_cost);
   if (feasible)
     multi_out.to_yaml_format(outFile.c_str());

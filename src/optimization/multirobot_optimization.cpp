@@ -89,7 +89,7 @@ bool execute_optimizationMultiRobot(const std::string &env_file,
 }
 
 bool execute_optimizationMetaRobot(
-    const std::string &env_file,
+    dynobench::Problem &problem,
     MultiRobotTrajectory &init_guess_multi_robot, // discrete search
     MultiRobotTrajectory
         &multi_robot_out, // output, initialized with parallel_opt
@@ -100,7 +100,7 @@ bool execute_optimizationMetaRobot(
   using namespace dynobench;
 
   Options_trajopt options_trajopt;
-  Problem problem(env_file);
+  // Problem problem(env_file);
 
   std::vector<int> goal_times; // (cluster.size());
   std::vector<int> all_goal_times;
