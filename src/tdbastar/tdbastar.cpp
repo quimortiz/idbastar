@@ -565,18 +565,22 @@ void tdbastar(
     *heuristic_result = T_n;
   }
   if (options_tdbastar.use_nigh_nn) {
-    // if (reverse_search){
+    if (reverse_search){
     //    T_m = nigh_factory2<Motion *>(problem.robotTypes[robot_id], robot,
     //    [](Motion& m) { return m->getLastStateEig(); });
-    // }
-    // else {
-    //    T_m = nigh_factory2<Motion *>(problem.robotTypes[robot_id], robot);
-    // }
     T_m = nigh_factory_t<Motion *>(problem.robotTypes[robot_id], robot,
                                    reverse_search);
-  } else {
-    NOT_IMPLEMENTED;
-  }
+
+    }
+    else {
+      T_m = nigh_factory2<Motion *>(problem.robotTypes[robot_id], robot);
+    }
+    // T_m = nigh_factory_t<Motion *>(problem.robotTypes[robot_id], robot,
+    //                                reverse_search);
+  } 
+  // else {
+  //   NOT_IMPLEMENTED;
+  // }
 
   time_bench.time_nearestMotion += timed_fun_void([&] {
     for (size_t i = 0;

@@ -189,9 +189,9 @@ struct LazyTraj {
                                  num_valid_states);
 
     }
-    // reverse, assumes 2d
+    // 
     else {
-      robot->transform_primitive(*offset - motion->traj.states.back().head(2),
+      robot->transform_primitive(*offset - motion->traj.states.back().head(robot->get_offset_dim()),
                                  motion->traj.states, motion->traj.actions, tmp,
                                  check_state, num_valid_states);
     }

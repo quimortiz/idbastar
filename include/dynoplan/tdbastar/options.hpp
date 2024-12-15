@@ -23,10 +23,10 @@ namespace po = boost::program_options;
 struct Options_tdbastar {
 
   bool fix_seed = 0; // use 1 to fix the seed of srand to 0
-  float delta = .3;  // discontinuity bound
+  float delta = .8;  // discontinuity bound
   float alpha =
       .5; // How discontinuity bound is shared between expansion and reaching
-  float connect_radius_h = .5; // Connection radius for heuristic (only ROADMAP)
+  float connect_radius_h = 3; // Connection radius for heuristic (only ROADMAP)
   std::string motionsFile = "";               // file with motion primitives
   std::vector<Motion> *motions_ptr = nullptr; // Pointer to loaded motions
   std::string outFile =
@@ -39,8 +39,8 @@ struct Options_tdbastar {
   double delta_factor_goal =
       1; // Acceptable distance to goal (in terms of delta)
   double cost_delta_factor = 1;    // Rate to add cost to the discontinuity
-  size_t num_sample_trials = 3000; // Used in Roadmap heuristic
-  size_t max_size_heu_map = 1000;  // Used in Roadmap heuristic
+  size_t num_sample_trials = 5000; // Used in Roadmap heuristic
+  size_t max_size_heu_map = 3000;  // Used in Roadmap heuristic
   size_t max_expands =
       1e6; // Max expands -- used as one of the stopping criteria
   bool cut_actions = false; // Cut input primitives to have more primitives
