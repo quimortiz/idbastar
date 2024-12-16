@@ -51,7 +51,7 @@ typedef typename boost::heap::d_ary_heap<
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_dbastar,
     dynobench::Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double upper_bound, double &h,
     std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
