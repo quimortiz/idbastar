@@ -513,9 +513,9 @@ int lowLevelfocalHeuristicSingleState(
 void tdbastar_epsilon(
     dynobench::Problem &problem, Options_tdbastar options_tdbastar,
     Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, double &upper_bound,
-    double &h, std::map<size_t, std::vector<size_t>> &robot_obj_sets,
-    bool reverse_search, std::vector<dynobench::Trajectory> &expanded_trajs,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double upper_bound, double &h,
+    std::map<size_t, std::vector<size_t>> &robot_obj_sets, bool reverse_search,
+    std::vector<dynobench::Trajectory> &expanded_trajs,
     std::vector<LowLevelPlan<dynobench::Trajectory>> &solution,
     std::map<std::string, std::vector<Motion>> &robot_motions,
     const std::vector<std::shared_ptr<dynobench::Model_robot>> &all_robots,
