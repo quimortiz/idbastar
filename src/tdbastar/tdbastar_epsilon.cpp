@@ -727,7 +727,7 @@ void tdbastar_epsilon(
   const bool check_intermediate_goal = true;
   const size_t num_check_goal = 0;
 
-  bool all_print = true;
+  bool all_print = false;
 
   std::function<bool(Eigen::Ref<Eigen::VectorXd>)> ff =
       [&](Eigen::Ref<Eigen::VectorXd> state) {
@@ -851,8 +851,7 @@ void tdbastar_epsilon(
       std::cout << "Open set" << std::endl;
       for (auto &f : open) {
         std::cout << f->state_eig.format(FMT) << std::endl;
-        // std::cout << "focalHeuristic: " << f->bestFocalHeuristic <<
-        // std::endl;
+        std::cout << "focalHeuristic: " << f->bestFocalHeuristic << std::endl;
         std::cout << "hScore: " << f->hScore << std::endl;
         std::cout << "fScore: " << f->fScore << std::endl;
       }
@@ -861,22 +860,13 @@ void tdbastar_epsilon(
       for (auto &f1 : focal) {
         auto f2 = *f1;
         std::cout << f2->state_eig.format(FMT) << std::endl;
-        // std::cout << "focalHeuristic: " << f2->bestFocalHeuristic <<
-        // std::endl;
+        std::cout << "focalHeuristic: " << f2->bestFocalHeuristic << std::endl;
         std::cout << "hScore: " << f2->hScore << std::endl;
         std::cout << "fScore: " << f2->fScore << std::endl;
       }
 
       std::cout << "open set size: " << open.size() << std::endl;
       std::cout << "focal set size: " << focal.size() << std::endl;
-    }
-    if (!reverse_search) {
-      // std::cout << "b/n state: " << best_node->state_eig.format(FMT) <<
-      // std::endl; std::cout << "b/n focalheuristic: " <<
-      // best_node->arrivals.at(best_node_bestFocalHeuristicIdx).focalHeuristic
-      // << std::endl;
-      std::cout << "b/n hScore: " << best_node->hScore << std::endl;
-      std::cout << "b/n fscore: " << best_node->fScore << std::endl;
     }
 
     if (time_bench.expands % print_every == 0) {
