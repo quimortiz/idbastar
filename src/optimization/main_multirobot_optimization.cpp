@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
   bool sum_robots_cost = true;
   desc.add_options()("help", "produce help message")(
       "env,e", po::value<std::string>(&envFile)->required())(
-      "init,i", po::value<std::string>(&initFile)->required())(
       "discrete,d", po::value<std::string>(&discreteSearchFile)->required())(
       "out,o", po::value<std::string>(&outFile)->required())(
       "base,b", po::value<std::string>(&dynobench_base)->required());
@@ -164,20 +163,45 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  MultiRobotTrajectory parallel_multirobot_sol;
-  parallel_multirobot_sol.read_from_yaml(initFile.c_str());
   MultiRobotTrajectory discrete_search_sol;
   discrete_search_sol.read_from_yaml(discreteSearchFile.c_str());
-  MultiRobotTrajectory multi_out = parallel_multirobot_sol;
+  MultiRobotTrajectory multi_out = discrete_search_sol;
   // if the cluster is known then run only this
-  std::unordered_set<size_t> cluster{3, 5};
-  std::string env_file_id = "/home/akmarak-laptop/IMRC/db-CBS/results/"
-                            "static_obs/drone12c/tmp_envFile.yaml";
-  // test_env(envFile, initFile, /*outputFile*/ env_file_id, cluster);
-  dynobench::Problem problem(env_file_id);
-  bool feasible =
-      execute_optimizationMetaRobot(problem, discrete_search_sol, multi_out,
-                                    dynobench_base, cluster, sum_robots_cost);
+  std::unordered_set<size_t> cluster{0, 1, 2, 3};
+  bool residual_force = true;
+  size_t robot_id = 0;
+  dynobench::Problem problem(envFile);
+  if (residual_force) { // considers only integrator2_3d dynamics
+    std::vector<double> _start, _goal;
+    for (auto &robotType : problem.robotTypes) {
+      if (robotType == "integrator2_3d_large_v0")
+        robotType = "integrator2_3d_res_large_v0";
+      else
+        robotType = "integrator2_3d_res_v0";
+      // manually add the f to the state
+      problem.starts.at(robot_id).conservativeResize(
+          problem.starts.at(robot_id).size() + 1);
+      problem.starts.at(robot_id)(problem.starts.at(robot_id).size() - 1) = 0;
+      problem.goals.at(robot_id).conservativeResize(
+          problem.goals.at(robot_id).size() + 1);
+      problem.goals.at(robot_id)(problem.goals.at(robot_id).size() - 1) = 0;
+      // problem.start, problem.goal need to change for joint-optimization
+      std::vector<double> tmp_vec1(problem.starts.at(robot_id).data(),
+                                   problem.starts.at(robot_id).data() +
+                                       problem.starts.at(robot_id).size());
+      _start.insert(_start.end(), tmp_vec1.begin(), tmp_vec1.end());
+      std::vector<double> tmp_vec2(problem.goals.at(robot_id).data(),
+                                   problem.goals.at(robot_id).data() +
+                                       problem.goals.at(robot_id).size());
+      _goal.insert(_goal.end(), tmp_vec2.begin(), tmp_vec2.end());
+      ++robot_id;
+    }
+    problem.start = Eigen::VectorXd::Map(_start.data(), _start.size());
+    problem.goal = Eigen::VectorXd::Map(_goal.data(), _goal.size());
+  }
+  bool feasible = execute_optimizationMetaRobot(
+      problem, discrete_search_sol, multi_out, dynobench_base, cluster,
+      sum_robots_cost, residual_force);
   if (feasible)
     multi_out.to_yaml_format(outFile.c_str());
 }

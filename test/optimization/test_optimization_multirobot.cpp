@@ -1037,3 +1037,66 @@ BOOST_AUTO_TEST_CASE(t_joint_integrator3d) {
     }
   }
 }
+
+// debugging example
+BOOST_AUTO_TEST_CASE(t_collision_with_environment) {
+
+  Options_trajopt options_trajopt;
+  std::string env_file = DYNOBENCH_BASE "envs/multirobot/example/drone4c.yaml";
+  std::string initial_guess_file =
+      DYNOBENCH_BASE "envs/multirobot/results/drone4c_res.yaml";
+
+  Problem problem(env_file);
+  bool residual_force = true;
+  size_t robot_id = 0;
+  if (residual_force) { // considers only integrator2_3d dynamics
+    std::vector<double> _start, _goal;
+    for (auto &robotType : problem.robotTypes) {
+      if (robotType == "integrator2_3d_large_v0")
+        robotType = "integrator2_3d_res_large_v0";
+      else
+        robotType = "integrator2_3d_res_v0";
+      // manually add the f to the state
+      problem.starts.at(robot_id).conservativeResize(
+          problem.starts.at(robot_id).size() + 1);
+      problem.starts.at(robot_id)(problem.starts.at(robot_id).size() - 1) = 0;
+      problem.goals.at(robot_id).conservativeResize(
+          problem.goals.at(robot_id).size() + 1);
+      problem.goals.at(robot_id)(problem.goals.at(robot_id).size() - 1) = 0;
+      // problem.start, problem.goal need to change for joint-optimization
+      std::vector<double> tmp_vec1(problem.starts.at(robot_id).data(),
+                                   problem.starts.at(robot_id).data() +
+                                       problem.starts.at(robot_id).size());
+      _start.insert(_start.end(), tmp_vec1.begin(), tmp_vec1.end());
+      std::vector<double> tmp_vec2(problem.goals.at(robot_id).data(),
+                                   problem.goals.at(robot_id).data() +
+                                       problem.goals.at(robot_id).size());
+      _goal.insert(_goal.end(), tmp_vec2.begin(), tmp_vec2.end());
+      ++robot_id;
+    }
+    problem.start = Eigen::VectorXd::Map(_start.data(), _start.size());
+    problem.goal = Eigen::VectorXd::Map(_goal.data(), _goal.size());
+  }
+  // augment the problem for the augmented state
+
+  // Trajectory init_guess(initial_guess_file);
+  MultiRobotTrajectory init_guess_multi_robot;
+  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
+
+  dynobench::Trajectory init_guess =
+      init_guess_multi_robot.transform_to_joint_trajectory();
+
+  options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 100;
+  options_trajopt.collision_weight = 200;
+  problem.models_base_path =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
+
+  Result_opti result;
+  Trajectory sol;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, result);
+  BOOST_TEST_CHECK(result.feasible == 1);
+}
