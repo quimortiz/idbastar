@@ -30,7 +30,7 @@ using namespace dynoplan;
 using namespace dynobench;
 
 // #define DYNOBENCH_BASE "../../dynobench/dynobench/"
-#define DYNOBENCH_BASE "../../dynobench/"
+#define DYNOBENCH_BASE "../dynobench/" // run from build/
 
 BOOST_AUTO_TEST_CASE(t_multi_robot_cli) {
 
@@ -1039,12 +1039,12 @@ BOOST_AUTO_TEST_CASE(t_joint_integrator3d) {
 }
 
 // debugging example
-BOOST_AUTO_TEST_CASE(t_collision_with_environment) {
+BOOST_AUTO_TEST_CASE(t_integrator2_3d_res_env) {
 
   Options_trajopt options_trajopt;
-  std::string env_file = DYNOBENCH_BASE "envs/multirobot/example/drone4c.yaml";
+  std::string env_file = DYNOBENCH_BASE "envs/multirobot/example/drone2c.yaml";
   std::string initial_guess_file =
-      DYNOBENCH_BASE "envs/multirobot/results/drone4c_res.yaml";
+      DYNOBENCH_BASE "envs/multirobot/results/drone2c_res.yaml";
 
   Problem problem(env_file);
   bool residual_force = true;
@@ -1127,12 +1127,71 @@ BOOST_AUTO_TEST_CASE(t_collision_with_environment) {
     size_t num_robots = init_guess_multi_robot.get_num_robots();
     index_time_goals = std::vector<int>(num_robots, sol.states.size());
   }
-
   MultiRobotTrajectory multi_out = from_joint_to_indiv_trajectory(
       sol, init_guess_multi_robot.get_nxs(), init_guess_multi_robot.get_nus(),
       index_time_goals);
-  //
-  multi_out.to_yaml_format(
-      DYNOBENCH_BASE
-      "envs/multirobot/results/collision_with_env_solution.yaml");
+
+  multi_out.to_yaml_format("collision_with_env_solution.yaml");
+}
+
+// single robot case, debugging
+BOOST_AUTO_TEST_CASE(t_integrator2_3d_res_single) {
+
+  Options_trajopt options_trajopt;
+  std::string env_file = "../../example/drone1c.yaml";
+  std::string initial_guess_file = "../../results/drone1c_res.yaml";
+
+  Problem problem(env_file);
+  bool residual_force = true;
+  size_t robot_id = 0;
+  if (residual_force) { // considers only integrator2_3d dynamics
+    std::vector<double> _start, _goal;
+    problem.robotTypes[0] = "integrator2_3d_res_v0";
+    problem.robotType = "integrator2_3d_res_v0";
+    problem.starts.at(robot_id).conservativeResize(
+        problem.starts.at(robot_id).size() + 1);
+    problem.starts.at(robot_id)(problem.starts.at(robot_id).size() - 1) = 0;
+    problem.goals.at(robot_id).conservativeResize(
+        problem.goals.at(robot_id).size() + 1);
+    problem.goals.at(robot_id)(problem.goals.at(robot_id).size() - 1) = 0;
+
+    std::vector<double> tmp_vec1(problem.starts.at(robot_id).data(),
+                                 problem.starts.at(robot_id).data() +
+                                     problem.starts.at(robot_id).size());
+
+    std::vector<double> tmp_vec2(problem.goals.at(robot_id).data(),
+                                 problem.goals.at(robot_id).data() +
+                                     problem.goals.at(robot_id).size());
+    problem.start = Eigen::VectorXd::Map(tmp_vec1.data(), tmp_vec1.size());
+    problem.goal = Eigen::VectorXd::Map(tmp_vec2.data(), tmp_vec2.size());
+  }
+  MultiRobotTrajectory init_guess_multi_robot;
+  init_guess_multi_robot.read_from_yaml(initial_guess_file.c_str());
+
+  bool sum_robots_cost = true;
+  if (sum_robots_cost) {
+    std::cout
+        << "warning: new approach where each robot tries to reach the goal fast"
+        << std::endl;
+    // problem.goal_times = goal_times; // don't for a single robot
+  }
+
+  dynobench::Trajectory init_guess =
+      init_guess_multi_robot.transform_to_joint_trajectory();
+
+  options_trajopt.solver_id = 1; // static_cast<int>(SOLVER::traj_opt);
+  options_trajopt.control_bounds = 1;
+  options_trajopt.use_warmstart = 1;
+  options_trajopt.weight_goal = 100;
+  options_trajopt.max_iter = 50;
+  options_trajopt.collision_weight = 200;
+  problem.models_base_path =
+      "/home/akmarak-laptop/IMRC/db-CBS/dynoplan/dynobench/models/";
+
+  Result_opti result;
+  Trajectory sol;
+  trajectory_optimization(problem, init_guess, options_trajopt, sol, result);
+  BOOST_TEST_CHECK(result.feasible == 1);
+  std::cout << "optimization done! " << std::endl;
+  sol.to_yaml_format("debug_drone1c.yaml");
 }

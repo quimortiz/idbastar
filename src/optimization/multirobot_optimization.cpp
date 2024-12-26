@@ -102,37 +102,40 @@ bool execute_optimizationMetaRobot(
   Options_trajopt options_trajopt;
   // Problem problem(env_file);
 
-  std::vector<int> goal_times; // (cluster.size());
+  std::vector<int> goal_times;
   std::vector<int> all_goal_times;
-  size_t index = 0;
-  for (size_t i = 0; i < init_guess_multi_robot.trajectories.size(); i++) {
-    // all_goal_times.push_back(traj.states.size());
-    if (cluster.find(index) != cluster.end()) {
-      goal_times.push_back(init_guess_multi_robot.trajectories.at(i)
-                               .states.size()); // from the discrete search
-      all_goal_times.push_back(
-          init_guess_multi_robot.trajectories.at(i).states.size());
-    } else
-      all_goal_times.push_back(
-          multi_robot_out.trajectories.at(i)
-              .states.size()); // from the parallel optimization
+  bool mrs = false;
+  if (init_guess_multi_robot.trajectories.size() > 1) {
+    mrs = true;
+    size_t index = 0;
+    for (size_t i = 0; i < init_guess_multi_robot.trajectories.size(); i++) {
+      // all_goal_times.push_back(traj.states.size());
+      if (cluster.find(index) != cluster.end()) {
+        goal_times.push_back(init_guess_multi_robot.trajectories.at(i)
+                                 .states.size()); // from the discrete search
+        all_goal_times.push_back(
+            init_guess_multi_robot.trajectories.at(i).states.size());
+      } else
+        all_goal_times.push_back(
+            multi_robot_out.trajectories.at(i)
+                .states.size()); // from the parallel optimization
 
-    ++index;
+      ++index;
+    }
+    std::cout << "goal times are " << std::endl;
+
+    for (auto &t : goal_times) {
+      std::cout << t << std::endl;
+    }
   }
 
   Trajectory init_guess;
 
-  std::cout << "goal times are " << std::endl;
-
-  for (auto &t : goal_times) {
-    std::cout << t << std::endl;
-  }
-
-  if (sum_robots_cost) {
+  if (sum_robots_cost && mrs) {
     std::cout
         << "warning: new approach where each robot tries to reach the goal fast"
         << std::endl;
-    problem.goal_times = goal_times; // for the cluster
+    problem.goal_times = goal_times;
   }
 
   else {
@@ -144,11 +147,9 @@ bool execute_optimizationMetaRobot(
   options_trajopt.solver_id = 1; // time optimal solution
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100; // 600
+  options_trajopt.weight_goal = 100;
   options_trajopt.max_iter = 50;
-  // options_trajopt.soft_control_bounds =
-  // false; // cbs-optimization fails (ubound_feas = 0) if true
-  options_trajopt.collision_weight = 200;
+  options_trajopt.collision_weight = 100;
   problem.models_base_path = dynobench_base + std::string("models/");
 
   Result_opti result;
@@ -179,7 +180,9 @@ bool execute_optimizationMetaRobot(
         j++;
       }
     }
-  }
+  } else
+    index_time_goals.push_back(sol.states.size()); // for a single robot case
+
   // removes the f from the solution
   from_joint_to_indiv_trajectory_meta(
       cluster, sol, multi_robot_out, index_time_goals,
