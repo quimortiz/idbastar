@@ -546,8 +546,6 @@ void Col_cost::calc(Eigen::Ref<Vxd> r, const Eigen::Ref<const Vxd> &x) {
                        sec_factor * (last_raw_d - margin);
 
   // std::cout << "checking collisions " << std::endl;
-  check_one = false;
-  check_two = false;
   if (check_one || check_two) {
     raw_d = last_raw_d;
   } else {
