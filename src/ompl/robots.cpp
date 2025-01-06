@@ -3187,6 +3187,26 @@ void traj_to_motion(const dynobench::Trajectory &traj,
   motion_out.cost = traj.cost;
 }
 
+// add N motions to motion_out. It starts adding from [current_size,....+N]
+void motion_to_motion(std::vector<Motion> &robot_motions,
+                      std::vector<Motion> &motion_out,
+                      dynobench::Model_robot &robot, size_t desired_size) {
+
+  std::cout << "before adding " << motion_out.size() << std::endl;
+  size_t N = std::min(desired_size, robot_motions.size());
+  for (size_t i = motion_out.size(); i < N; i++) {
+    dynoplan::Motion m;
+    m.traj = robot_motions.at(i).traj;
+    m.states.resize(m.traj.states.size());
+    m.actions.resize(m.traj.actions.size());
+    m.cost = m.traj.cost;
+    m.idx = motion_out.size();
+    compute_col_shape(m, robot);
+    motion_out.push_back(std::move(m));
+  }
+  std::cout << "after adding " << motion_out.size() << std::endl;
+}
+
 void compute_col_shape(Motion &m, dynobench::Model_robot &robot) {
   for (auto &x : m.traj.states) {
 
