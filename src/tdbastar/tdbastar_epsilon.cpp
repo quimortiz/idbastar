@@ -974,21 +974,21 @@ void tdbastar_epsilon(
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
 
-      focalHeuristic =
-          best_node_bestFocalHeuristic +
-          lowLevelfocalHeuristicSequential(
-              solution, time_bench, all_robots, problem.robotTypes,
-              traj_wrapper, robot_id, robot_obj_sets,
-              best_node_bestFocalHeuristicgScore, // best_node->gScore
-              robot_objs, reachesGoal, residual_force);
-
-      // good for small group cases (n <= 8)
       // focalHeuristic =
       // best_node_bestFocalHeuristic +
-      // lowLevelfocalHeuristicState(
-      // solution, time_bench, all_robots, traj_wrapper, robot_id,
+      // lowLevelfocalHeuristicSequential(
+      // solution, time_bench, all_robots, problem.robotTypes,
+      // traj_wrapper, robot_id, robot_obj_sets,
       // best_node_bestFocalHeuristicgScore, // best_node->gScore
-      // col_mng_robots, robot_objs, reachesGoal, run_focal_heuristic);
+      // robot_objs, reachesGoal, residual_force);
+
+      // good for small group cases (n <= 8)
+      focalHeuristic =
+          best_node_bestFocalHeuristic +
+          lowLevelfocalHeuristicState(
+              solution, time_bench, all_robots, traj_wrapper, robot_id,
+              best_node_bestFocalHeuristicgScore, // best_node->gScore
+              col_mng_robots, robot_objs, reachesGoal, run_focal_heuristic);
 
       auto tmp_traj = dynobench::trajWrapper_2_Trajectory(traj_wrapper);
       tmp_traj.cost = best_node_bestFocalHeuristicgScore; // best_node->gScore
