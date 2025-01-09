@@ -196,16 +196,17 @@ int highLevelfocalHeuristicState(
                   static_cast<float>(dist(0)), static_cast<float>(dist(1)),
                   static_cast<float>(dist(2)), static_cast<float>(dist(3)),
                   static_cast<float>(dist(4)), static_cast<float>(dist(5))};
-              const auto nnType = (robot_types[j] == "integrator2_3d_large_v0")
-                                      ? NN_ROBOT_LARGE
-                                      : NN_ROBOT_SMALL;
+              const auto nnType =
+                  (robot_types[j] == "integrator2_3d_res_large_v0")
+                      ? NN_ROBOT_LARGE
+                      : NN_ROBOT_SMALL;
 
               nn_add_neighbor(input, nnType);
             }
           }
         }
         // after checking with all neighbors
-        const auto selfType = (robot_types[i] == "integrator2_3d_large_v0")
+        const auto selfType = (robot_types[i] == "integrator2_3d_res_large_v0")
                                   ? NN_ROBOT_LARGE
                                   : NN_ROBOT_SMALL;
         const float *rhoOutput = nn_eval(selfType); // in grams
@@ -318,7 +319,7 @@ int lowLevelfocalHeuristicSequential(
                   static_cast<float>(dist(2)), static_cast<float>(dist(3)),
                   static_cast<float>(dist(4)), static_cast<float>(dist(5))};
               const auto nnType =
-                  (robot_types[robot_idx] == "integrator2_3d_large_v0")
+                  (robot_types[robot_idx] == "integrator2_3d_res_large_v0")
                       ? NN_ROBOT_LARGE
                       : NN_ROBOT_SMALL;
 
@@ -331,7 +332,7 @@ int lowLevelfocalHeuristicSequential(
       // after checking with all neighbors
       if (check_rho) {
         const auto selfType =
-            (robot_types[current_robot_idx] == "integrator2_3d_large_v0")
+            (robot_types[current_robot_idx] == "integrator2_3d_res_large_v0")
                 ? NN_ROBOT_LARGE
                 : NN_ROBOT_SMALL;
         const float *rhoOutput = nn_eval(selfType); // in grams
