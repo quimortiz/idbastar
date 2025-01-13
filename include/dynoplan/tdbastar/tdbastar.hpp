@@ -163,7 +163,7 @@ void export_constraints(const std::vector<Constraint> &constrained_states,
 void tdbastar(
     dynobench::Problem &problem, Options_tdbastar options_dbastar,
     dynobench::Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, bool reverse_search,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double upper_bound, double &h, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn = nullptr,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result =

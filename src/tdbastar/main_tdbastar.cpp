@@ -88,6 +88,8 @@ int main(int argc, char *argv[]) {
   options_tdbastar.cost_delta_factor = 0;
   options_tdbastar.delta = cfg["delta_0"].as<float>();
   options_tdbastar.fix_seed = 1;
+  std::vector<double> upper_bounds(0, std::numeric_limits<double>::max());
+  std::vector<double> hs(0, -1.0); // start->hScore
   options_tdbastar.max_motions = cfg["num_primitives_0"].as<size_t>();
   std::cout << "*** options_tdbastar ***" << std::endl;
   options_tdbastar.print(std::cout);
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]) {
   options_tdbastar.motions_ptr = &motions;
   std::vector<dynobench::Trajectory> expanded_trajs_tmp;
   tdbastar(problem, options_tdbastar, trajectory, constraints, out_tdb,
-           robot_id, /*reverse_search*/ false, expanded_trajs_tmp, nullptr,
+           robot_id, upper_bounds[robot_id], hs[robot_id], /*reverse_search*/ false, expanded_trajs_tmp, nullptr,
            nullptr);
   if (save_expanded_trajs) {
     fs::path output_path(outputFile);

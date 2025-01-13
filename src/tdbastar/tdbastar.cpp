@@ -508,7 +508,7 @@ void export_node_expansion(std::vector<dynobench::Trajectory> &expanded_trajs,
 void tdbastar(
     dynobench::Problem &problem, Options_tdbastar options_tdbastar,
     Trajectory &traj_out, const std::vector<Constraint> &constraints,
-    Out_info_tdb &out_info_tdb, size_t &robot_id, bool reverse_search,
+    Out_info_tdb &out_info_tdb, size_t &robot_id, double upper_bound, double &h, bool reverse_search,
     std::vector<dynobench::Trajectory> &expanded_trajs,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> *heuristic_nn,
     ompl::NearestNeighbors<std::shared_ptr<AStarNode>> **heuristic_result) {
@@ -636,6 +636,9 @@ void tdbastar(
 
   auto goal_node = std::make_shared<AStarNode>();
   goal_node->state_eig = problem.goals[robot_id];
+  if (h == -1 && !reverse_search) {
+    h = start_node->hScore;
+  }
   open_t open;
   start_node->handle = open.push(start_node);
 
@@ -825,7 +828,9 @@ void tdbastar(
                       options_tdbastar.cost_delta_factor *
                           robot->lower_bound_time(best_node->state_eig,
                                                   traj_wrapper.get_state(0));
-
+      if (gScore > upper_bound) {
+        continue;
+      }
       auto tmp_traj = dynobench::trajWrapper_2_Trajectory(traj_wrapper);
       tmp_traj.cost = best_node->gScore;
       expanded_trajs.push_back(tmp_traj);

@@ -35,14 +35,11 @@ add_executable(
 add_executable(test_rrt_to rrt_to/test_rrt_to_base.cpp rrt_to/test_rrt_to_0.cpp
                            rrt_to/test_rrt_to_cli.cpp)
 
-<<<<<<< Updated upstream
-=======
 # tdb-A*
 add_executable(test_tdbastar tdbastar/test_tdbastar_base.cpp)
                             #  tdbastar/test_tdbastar_0.cpp)
 # tdbastar/test_tdbastar_cli.cpp)
 
->>>>>>> Stashed changes
 target_link_libraries(test_idbastar idbastar::idbastar
                       Boost::unit_test_framework)
 
