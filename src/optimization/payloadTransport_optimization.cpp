@@ -34,8 +34,6 @@ bool execute_payloadTransportOptimization(std::string &env_file,
     std::cout << "croco success -- returning " << std::endl;
     std::cout << "optimization done! " << std::endl;
     std::cout << "trajectory written in: " << output_file << std::endl;
-    sol.to_yaml_format(output_file.c_str());  
-    sol.to_yaml_format(output_file_anytime.c_str());  
     return true;
   } else {
     std::cout << "croco failed -- returning " << std::endl;
