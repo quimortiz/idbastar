@@ -74,7 +74,9 @@ using __SpaceIntegrator2_3d =
 using SpaceIntegrator2_3d_res = nigh::CartesianSpace<
     nigh::L2Space<double, 3>,
     nigh::ScaledSpace<nigh::L2Space<double, 3>, std::ratio<1, 4>>,
-    nigh::ScaledSpace<nigh::L2Space<double, 1>, std::ratio<1, 4>>>;
+    nigh::ScaledSpace<nigh::L2Space<double, 1>,
+                      std::ratio<1, 2>>>; // std::ratio<1,
+                                          // 4>
 
 using __SpaceIntegrator2_3d_res =
     nigh::CartesianSpace<nigh::ScaledSpace<nigh::L2Space<double, 3>>,
