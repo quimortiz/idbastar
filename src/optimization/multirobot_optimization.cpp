@@ -94,7 +94,7 @@ bool execute_optimizationMetaRobot(
     MultiRobotTrajectory
         &multi_robot_out, // output, initialized with parallel_opt
     const std::string &dynobench_base, std::unordered_set<size_t> &cluster,
-    bool sum_robots_cost = true, bool residual_force) {
+    bool sum_robots_cost = true) {
 
   using namespace dynoplan;
   using namespace dynobench;
@@ -182,7 +182,7 @@ bool execute_optimizationMetaRobot(
   }
   // removes the f from the solution
   from_joint_to_indiv_trajectory_meta(
-      cluster, sol, multi_robot_out, index_time_goals,
-      residual_force); // time matters only for cluster
+      cluster, sol, multi_robot_out,
+      index_time_goals); // time matters only for cluster
   return true;
 }

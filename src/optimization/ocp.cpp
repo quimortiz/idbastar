@@ -614,7 +614,8 @@ void fix_problem_quaternion(Eigen::VectorXd &start, Eigen::VectorXd &goal,
   double d2 = (xs_init.front().segment<4>(3) + start.segment<4>(3)).norm();
 
   if (d2 < d1) {
-    std::cout << "WARNING: " << "i flip the start state" << std::endl;
+    std::cout << "WARNING: "
+              << "i flip the start state" << std::endl;
     xs_init.front().segment<4>(3) *= -1.;
   }
 
@@ -1080,8 +1081,8 @@ void __trajectory_optimization(
   SOLVER solver = static_cast<SOLVER>(options_trajopt_local.solver_id);
 
   if (modify_to_match_goal_start) {
-    std::cout << "WARNING: " << "i modify last state to match goal"
-              << std::endl;
+    std::cout << "WARNING: "
+              << "i modify last state to match goal" << std::endl;
     xs_init.back() = goal;
     xs_init.front() = start;
   }
@@ -1648,14 +1649,16 @@ void __trajectory_optimization(
 
       if (is_last) {
         finished = true;
-        std::cout << "finished: " << "is_last=TRUE" << std::endl;
+        std::cout << "finished: "
+                  << "is_last=TRUE" << std::endl;
       }
 
       counter++;
 
       if (counter > options_trajopt_local.max_mpc_iterations) {
         finished = true;
-        std::cout << "finished: " << "max mpc iterations" << std::endl;
+        std::cout << "finished: "
+                  << "max mpc iterations" << std::endl;
       }
     }
     std::cout << "Total TIME: " << total_time << std::endl;
@@ -1900,14 +1903,22 @@ void __trajectory_optimization(
 
     traj.check(model_robot, true);
     std::cout << "Final CHECK -- DONE" << std::endl;
-
-    dynobench::Feasibility_thresholds thresholds{.traj_tol = traj_tol,
-                                                 .goal_tol = goal_tol,
-                                                 .col_tol = col_tol,
-                                                 .x_bound_tol = x_bound_tol,
-                                                 .u_bound_tol = u_bound_tol};
-
-    traj.update_feasibility(thresholds);
+    // for the residual force I am easing the thresholds
+    if (t_problem.is_residual | t_problem.is_conservative) {
+      dynobench::Feasibility_thresholds thresholds{.traj_tol = traj_tol,
+                                                   .goal_tol = 5e-2,
+                                                   .col_tol = 1e-1,
+                                                   .x_bound_tol = x_bound_tol,
+                                                   .u_bound_tol = u_bound_tol};
+      traj.update_feasibility(thresholds, /*verbose*/ true);
+    } else {
+      dynobench::Feasibility_thresholds thresholds{.traj_tol = traj_tol,
+                                                   .goal_tol = goal_tol,
+                                                   .col_tol = col_tol,
+                                                   .x_bound_tol = x_bound_tol,
+                                                   .u_bound_tol = u_bound_tol};
+      traj.update_feasibility(thresholds, /*verbose*/ true);
+    }
 
     opti_out.feasible = traj.feasible;
 
@@ -1945,16 +1956,14 @@ void trajectory_optimization(const dynobench::Problem &problem,
   // std::string _base_path = "../../models/";
 
   std::shared_ptr<dynobench::Model_robot> model_robot;
-  // if (problem.robotTypes.size() == 1) {
   if (problem.robotTypes.size() == 1 && problem.goal_times.size() == 0) {
-    // robotType.empty()) {
     model_robot = dynobench::robot_factory(
         (problem.models_base_path + problem.robotType + ".yaml").c_str(),
         problem.p_lb, problem.p_ub);
   } else {
-    model_robot = dynobench::joint_robot_factory(problem.robotTypes,
-                                                 problem.models_base_path,
-                                                 problem.p_lb, problem.p_ub);
+    model_robot = dynobench::joint_robot_factory(
+        problem.robotTypes, problem.models_base_path, problem.p_lb,
+        problem.p_ub, problem.is_residual, problem.is_conservative);
   }
 
   if (problem.goal_times.size()) {
@@ -2089,7 +2098,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
       CSTR_(time_ddp_total);
 
       if (!opti_out.success) {
-        std::cout << "warning" << " " << "not success" << std::endl;
+        std::cout << "warning"
+                  << " "
+                  << "not success" << std::endl;
         do_mpcc = false;
         break;
       }
@@ -2114,7 +2125,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
         time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
         CSTR_(time_ddp_total);
         if (!opti_out.success) {
-          std::cout << "warning" << " " << "not success" << std::endl;
+          std::cout << "warning"
+                    << " "
+                    << "not success" << std::endl;
           break;
         }
       }
@@ -2141,7 +2154,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
     time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
     CSTR_(time_ddp_total);
     if (!opti_out.success) {
-      std::cout << "warning" << " " << "not success" << std::endl;
+      std::cout << "warning"
+                << " "
+                << "not success" << std::endl;
       do_free_time = false;
     }
 
@@ -2189,7 +2204,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
     time_ddp_total += std::stod(opti_out.data.at("ddp_time"));
     CSTR_(time_ddp_total);
     if (!opti_out.success) {
-      std::cout << "warning" << " " << "fail first step" << std::endl;
+      std::cout << "warning"
+                << " "
+                << "fail first step" << std::endl;
       do_free_time = false;
     }
 
@@ -2367,7 +2384,8 @@ void trajectory_optimization(const dynobench::Problem &problem,
     CSTR_(time_ddp_total);
 
     if (!opti_out.success) {
-      std::cout << "warning:" << "not success" << std::endl;
+      std::cout << "warning:"
+                << "not success" << std::endl;
       do_final_repair_step = false;
     }
 
@@ -2402,7 +2420,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
     CSTR_(time_ddp_total);
 
     if (!opti_out.success) {
-      std::cout << "warning" << " " << "infeasible" << std::endl;
+      std::cout << "warning"
+                << " "
+                << "infeasible" << std::endl;
       do_final_repair_step = false;
     }
 
@@ -2513,7 +2533,9 @@ void trajectory_optimization(const dynobench::Problem &problem,
     // solve without bounds  --
 
     if (!opti_out.success) {
-      std::cout << "warning" << " " << "not success" << std::endl;
+      std::cout << "warning"
+                << " "
+                << "not success" << std::endl;
       do_opti_with_real_bounds = false;
     }
 
