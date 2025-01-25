@@ -834,6 +834,7 @@ void tdbastar_epsilon(
 #endif
     if (focal.empty()) {
       std::cout << "EMPTY FOCAL" << std::endl;
+      out_info_tdb.solved = false;
       return;
     }
     auto best_handle = focal.top(); // based on bestFocalHeuristic

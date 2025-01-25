@@ -3195,8 +3195,9 @@ void motion_to_motion(std::vector<Motion> &robot_motions,
                       std::vector<Motion> &motion_out,
                       dynobench::Model_robot &robot, size_t desired_size) {
 
-  std::cout << "before adding " << motion_out.size() << std::endl;
+  // std::cout << "before adding " << motion_out.size() << std::endl;
   size_t N = std::min(desired_size, robot_motions.size());
+  std::cout << "N inside motion-to-motion: " << N << std::endl;
   for (size_t i = motion_out.size(); i < N; i++) {
     dynoplan::Motion m;
     m.traj = robot_motions.at(i).traj;
@@ -3207,7 +3208,7 @@ void motion_to_motion(std::vector<Motion> &robot_motions,
     compute_col_shape(m, robot);
     motion_out.push_back(std::move(m));
   }
-  std::cout << "after adding " << motion_out.size() << std::endl;
+  // std::cout << "after adding " << motion_out.size() << std::endl;
 }
 
 void compute_col_shape(Motion &m, dynobench::Model_robot &robot) {
