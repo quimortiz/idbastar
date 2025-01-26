@@ -765,53 +765,55 @@ void tdbastar_epsilon(
     double best_cost = open.top()->fScore;
     auto iter = open.ordered_begin();
     auto iterEnd = open.ordered_end();
-    for (; iter != iterEnd;
-         ++iter) // each node in Open has only 1 bestFocalHeuristic
-    {
-      // find/compute lowest focalHeuristic that fulfills suboptimality
-      // condition
-      int bestFocalHeuristic = std::numeric_limits<int>::max();
-      size_t best_focal_arrival_idx = 0;
-      size_t best_gscore = 0;
-      size_t idx = 0;
-      bool found = false;
-      size_t tmp_best_focal_arrival_idx = 0;
-      for (const auto &arrival : (*iter)->arrivals) {
-        double cost = arrival.gScore + (*iter)->hScore; // fScore
-        if (cost <= best_cost * w && cost < upper_bound) {
-          if (arrival.focalHeuristic < bestFocalHeuristic) {
-            bestFocalHeuristic = arrival.focalHeuristic;
-            best_focal_arrival_idx = idx;
-          } else if (arrival.focalHeuristic == bestFocalHeuristic) {
-            tmp_best_focal_arrival_idx =
-                (arrival.fScore <
-                 (*iter)->arrivals.at(best_focal_arrival_idx).fScore)
-                    ? idx
-                    : best_focal_arrival_idx;
-            best_focal_arrival_idx = tmp_best_focal_arrival_idx;
+    time_bench.time_rebuild_focal_set += timed_fun_void([&] {
+      for (; iter != iterEnd;
+           ++iter) // each node in Open has only 1 bestFocalHeuristic
+      {
+        // find/compute lowest focalHeuristic that fulfills suboptimality
+        // condition
+        int bestFocalHeuristic = std::numeric_limits<int>::max();
+        size_t best_focal_arrival_idx = 0;
+        size_t best_gscore = 0;
+        size_t idx = 0;
+        bool found = false;
+        size_t tmp_best_focal_arrival_idx = 0;
+        for (const auto &arrival : (*iter)->arrivals) {
+          double cost = arrival.gScore + (*iter)->hScore; // fScore
+          if (cost <= best_cost * w && cost < upper_bound) {
+            if (arrival.focalHeuristic < bestFocalHeuristic) {
+              bestFocalHeuristic = arrival.focalHeuristic;
+              best_focal_arrival_idx = idx;
+            } else if (arrival.focalHeuristic == bestFocalHeuristic) {
+              tmp_best_focal_arrival_idx =
+                  (arrival.fScore <
+                   (*iter)->arrivals.at(best_focal_arrival_idx).fScore)
+                      ? idx
+                      : best_focal_arrival_idx;
+              best_focal_arrival_idx = tmp_best_focal_arrival_idx;
+            }
+            found = true;
           }
-          found = true;
+          ++idx;
         }
-        ++idx;
-      }
 
-      if (found) {
-        // picking up from Focal is based on bestFocalHeuristic, but it doesn't
-        // mean my current_idx is pointing to this element that is why
-        // arrival_idx of the child node should have best_focal_arrival_idx.
-        // current_arrival_idx is good for tdbA*, since is gets updated ONLY if
-        // the gscore has been improved. At the moment it might be updated if
-        // gscore OR focalHeuristic have been changed.
-        (*iter)->bestFocalHeuristic = bestFocalHeuristic;
-        (*iter)->best_focal_arrival_idx =
-            best_focal_arrival_idx; // which element of the current node has the
-                                    // lowest focalHeuristic
-        std::shared_ptr<AStarNode> n = *iter;
-        focal.push(n->handle);
-      } else {
-        break;
+        if (found) {
+          // picking up from Focal is based on bestFocalHeuristic, but it
+          // doesn't mean my current_idx is pointing to this element that is why
+          // arrival_idx of the child node should have best_focal_arrival_idx.
+          // current_arrival_idx is good for tdbA*, since is gets updated ONLY
+          // if the gscore has been improved. At the moment it might be updated
+          // if gscore OR focalHeuristic have been changed.
+          (*iter)->bestFocalHeuristic = bestFocalHeuristic;
+          (*iter)->best_focal_arrival_idx =
+              best_focal_arrival_idx; // which element of the current node has
+                                      // the lowest focalHeuristic
+          std::shared_ptr<AStarNode> n = *iter;
+          focal.push(n->handle);
+        } else {
+          break;
+        }
       }
-    }
+    });
 #else
     {
       auto oldbest_fScore = best_fScore;
@@ -1223,7 +1225,8 @@ void tdbastar_epsilon(
       time_bench.time_lazy_expand - time_bench.time_alloc_primitive -
       time_bench.time_transform_primitive - time_bench.time_queue -
       time_bench.check_bounds - time_bench.time_hfun -
-      time_bench.time_check_constraints - time_bench.time_collision_heuristic;
+      time_bench.time_check_constraints - time_bench.time_collision_heuristic -
+      time_bench.time_rebuild_focal_set;
 
   assert(time_bench.extra_time >= 0);
   // assert(time_bench.extra_time / time_bench.time_search * 100 <

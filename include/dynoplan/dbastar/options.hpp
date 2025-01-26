@@ -39,6 +39,7 @@ struct Time_benchmark {
   double time_search = 0;
   double time_collision_heuristic = 0;
   double time_check_constraints = 0;
+  double time_rebuild_focal_set = 0;
 
   void inline write(std::ostream &out) {
 
@@ -69,6 +70,7 @@ struct Time_benchmark {
     out << be << STR(motions_tree_size, af) << std::endl;
     out << be << STR(states_tree_size, af) << std::endl;
     out << be << STR(time_hfun, af) << std::endl;
+    out << be << STR(time_rebuild_focal_set, af) << std::endl;
   };
 
   inline std::map<std::string, std::string> to_data() const {
@@ -81,6 +83,8 @@ struct Time_benchmark {
     out.insert(NAME_AND_STRING(build_heuristic));
     out.insert(NAME_AND_STRING(time_queue));
     out.insert(NAME_AND_STRING(time_search));
+    out.insert(NAME_AND_STRING(time_collision_heuristic));
+    out.insert(NAME_AND_STRING(time_check_constraints));
     out.insert(NAME_AND_STRING(time_nearestMotion));
     out.insert(NAME_AND_STRING(time_nearestNode));
     out.insert(NAME_AND_STRING(time_nearestNode_add));
@@ -95,6 +99,7 @@ struct Time_benchmark {
     out.insert(NAME_AND_STRING(motions_tree_size));
     out.insert(NAME_AND_STRING(states_tree_size));
     out.insert(NAME_AND_STRING(time_hfun));
+    out.insert(NAME_AND_STRING(time_rebuild_focal_set));
     return out;
   };
 };
