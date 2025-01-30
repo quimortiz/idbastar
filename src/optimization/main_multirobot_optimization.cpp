@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   dynobench::Problem tmp_problem(env_file_id);
   bool feasible =
       execute_optimizationMetaRobot(tmp_problem, discrete_search_sol, multi_out,
-                                    dynobench_base, cluster, sum_robots_cost);
+                                    dynobench_base, sum_robots_cost);
   if (feasible)
     multi_out.to_yaml_format(outFile.c_str());
 }

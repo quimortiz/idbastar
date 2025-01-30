@@ -15,4 +15,4 @@ bool execute_optimizationMetaRobot(
     dynobench::Problem &problem,
     MultiRobotTrajectory &multi_robot_initial_guess,
     MultiRobotTrajectory &multi_robot_out, const std::string &dynobench_base,
-    std::unordered_set<size_t> &cluster, bool sum_robots_cost);
+    bool sum_robots_cost);
