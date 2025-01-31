@@ -31,6 +31,19 @@ using __Space =
     nigh::CartesianSpace<nigh::ScaledSpace<nigh::L2Space<double, 2>>,
                          nigh::ScaledSpace<nigh::SO2Space<double>>>;
 
+using Space3 = nigh::CartesianSpace< // for polulu = unicycle3d
+    nigh::L2Space<double, 3>,
+    nigh::ScaledSpace<nigh::SO2Space<double>, std::ratio<1, 2>>>;
+
+using __Space3 =
+    nigh::CartesianSpace<nigh::ScaledSpace<nigh::L2Space<double, 3>>,
+                         nigh::ScaledSpace<nigh::SO2Space<double>>>;
+
+using __SpaceWithCost3 = // for polulu = unicycle3d
+    nigh::CartesianSpace<nigh::ScaledSpace<nigh::L2Space<double, 3>>,
+                         nigh::ScaledSpace<nigh::SO2Space<double>>,
+                         nigh::ScaledSpace<nigh::L2Space<double, 1>>>;
+
 using __SpaceWithCost =
     nigh::CartesianSpace<nigh::ScaledSpace<nigh::L2Space<double, 2>>,
                          nigh::ScaledSpace<nigh::SO2Space<double>>,
@@ -412,7 +425,7 @@ ompl::NearestNeighbors<_T> *nigh_factory2(
   auto &w = robot->distance_weights;
   // CSTR_V(w);
 
-  if (startsWith(name, "unicycle1")) {
+  if (startsWith(name, "unicycle1") && name != "unicycle1_3d") {
 
     if (cost_scale < 0) {
       auto data_to_key = [robot, fun](_T const &m) {
@@ -440,6 +453,34 @@ ompl::NearestNeighbors<_T> *nigh_factory2(
       __SpaceWithCost space(double(w(0)), double(w(1)), cost_scale);
 
       out = new NearestNeighborsNigh<_T, __SpaceWithCost>(space, data_to_key);
+    }
+
+  } else if (startsWith(name, "unicycle1_3d")) {
+
+    if (cost_scale < 0) {
+      auto data_to_key = [robot, fun](_T const &m) {
+        Eigen::Vector4d __x = fun(m);
+        return std::tuple(Eigen::Vector3d(__x.head(3)), __x(3));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __Space3 space(double(w(0)), double(w(1)));
+
+      out = new NearestNeighborsNigh<_T, __Space3>(space, data_to_key);
+    } else {
+
+      std::cout << "Warning: State space with cost!" << std::endl;
+      auto data_to_key = [robot, fun](_T const &m) {
+        Eigen::Vector4d __x = fun(m);
+        double c = m->get_cost();
+        using Vector1d = Eigen::Matrix<double, 1, 1>;
+        return std::tuple(Eigen::Vector3d(__x.head(3)), __x(3), Vector1d(c));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __SpaceWithCost3 space(double(w(0)), double(w(1)), cost_scale);
+
+      out = new NearestNeighborsNigh<_T, __SpaceWithCost3>(space, data_to_key);
     }
 
   } else if (startsWith(name, "unicycle2")) {
@@ -617,7 +658,7 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
   auto &w = robot->distance_weights;
   // CSTR_V(w);
 
-  if (startsWith(name, "unicycle1")) {
+  if (startsWith(name, "unicycle1") && name != "unicycle1_3d") {
 
     if (cost_scale < 0) {
       auto data_to_key = [robot, fun, reverse_search](_T const &m) {
@@ -644,6 +685,35 @@ ompl::NearestNeighbors<_T> *nigh_factory_t(
       __SpaceWithCost space(double(w(0)), double(w(1)), cost_scale);
 
       out = new NearestNeighborsNigh<_T, __SpaceWithCost>(space, data_to_key);
+    }
+
+  } else if (startsWith(name, "unicycle1_3d")) {
+
+    if (cost_scale < 0) {
+      auto data_to_key = [robot, fun, reverse_search](_T const &m) {
+        Eigen::Vector4d __x =
+            fun(m, reverse_search, robot->translation_invariance);
+        return std::tuple(Eigen::Vector3d(__x.head(3)), __x(3));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __Space3 space(double(w(0)), double(w(1)));
+
+      out = new NearestNeighborsNigh<_T, __Space3>(space, data_to_key);
+    } else {
+      std::cout << "Warning: State space with cost!" << std::endl;
+      auto data_to_key = [robot, fun, reverse_search](_T const &m) {
+        Eigen::Vector4d __x =
+            fun(m, reverse_search, robot->translation_invariance);
+        double c = m->get_cost();
+        using Vector1d = Eigen::Matrix<double, 1, 1>;
+        return std::tuple(Eigen::Vector3d(__x.head(3)), __x(3), Vector1d(c));
+      };
+
+      DYNO_CHECK_EQ(w.size(), 2, AT);
+      __SpaceWithCost3 space(double(w(0)), double(w(1)), cost_scale);
+
+      out = new NearestNeighborsNigh<_T, __SpaceWithCost3>(space, data_to_key);
     }
 
   } else if (startsWith(name, "unicycle2")) {
