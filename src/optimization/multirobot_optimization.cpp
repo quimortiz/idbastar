@@ -132,9 +132,9 @@ bool execute_optimizationMetaRobot(
   options_trajopt.solver_id = 1; // time optimal solution
   options_trajopt.control_bounds = 1;
   options_trajopt.use_warmstart = 1;
-  options_trajopt.weight_goal = 100; // 600
+  options_trajopt.weight_goal = 100;
   options_trajopt.max_iter = 50;
-  options_trajopt.collision_weight = 100;
+  options_trajopt.collision_weight = 100; // 300 for wall10
   problem.models_base_path = dynobench_base + std::string("models/");
 
   Result_opti result;
